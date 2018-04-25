@@ -225,17 +225,17 @@ my_file <- file.path("K:\\QUOTA\\DIMM_COMU\\SAIER\\Hostals\ i\ Pensions\\2018\\E
 # Specify sheet by its name
 my_data <- read_excel(my_file, sheet = "Dades")
 head(my_data)
-my_data <- my_data %>% 
-#  filter(ComunicacioDerivacio == "D" | ComunicacioDerivacio == "Derivació")
-#  filter(ComunicacioDerivacio == "DERIVACIÓ") %>%
-  filter(AnyDerivText == anydades)
+#my_data <- my_data %>% 
+#  filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
+#  filter(Categoria == "Immis") %>%
+#  filter(Mes == "MARÇ") 
 #colnames(my_data)
 
 
 geodata <- read_excel(my_file, sheet = "PaisesContinentes")
 
 # Summarise data based on Country of origin
-my_data4 <- count(my_data, NacionalitatAngles, MesDerivacioSAIER, GrupEdat, HomeDona, wt = NULL, sort = FALSE)
+my_data4 <- count(my_data, NacionalitatAngles, Mes, AdultMenor, Genere, wt = NULL, sort = FALSE)
 #colnames(my_data4)
 my_data4$NacionalitatAngles <- apply(my_data4, 2, toupper)
 #head(my_data4)
@@ -252,12 +252,13 @@ my_data5 <- my_data4 %>% left_join(geodata, by = c("NacionalitatAngles" = "PaisA
 my_data5b <- my_data5 %>%
   # filter(grepl("EUROPA", Continent)) %>%
   select(NacionalitatAngles,
-         MesDerivacioSAIER,
-         GrupEdat,
-         HomeDona,
+         Mes,
+         AdultMenor,
+         Genere,
          n,
          lon,
-         lat
+         lat,
+         ContAngles
   ) %>%
   #    group_by(Nacionalitat_Angles) %>%
   #    summarise_all(sum) %>%
@@ -270,16 +271,16 @@ head(my_data5b)
 
 
 
-## Derivacions CUESB -> SAIER 2017
+## Nacionalitats
 
-### Derivacions CUESB -> SAIER 2017: Nacionalitats
-
-```{r Derivacions CUESB -> SAIER 2017}
+```{r Nacionalitats}
 
 # Get the data selected
 my_data7a <- my_data %>% 
   count(NacionalitatAngles,
-        Continent,
+        Mes,
+        AdultMenor,
+        Genere,
         wt = NULL,
         sort = FALSE) %>%
   filter(!is.na(NacionalitatAngles)
@@ -311,39 +312,30 @@ if (crear.informe.word == TRUE) {
   
 }
 
-```
+# Afegir Continent
+my_data7a$NacionalitatAngles <- apply(my_data7a, 2, toupper)
+# Add coordinates to the countries from the Dades sheet, using left_join
+my_data7aCont <- my_data7a %>% left_join(geodata, by = c("NacionalitatAngles" = "PaisAngles"))
 
-```{r MSCHart i Plotly Proves fallides}
+my_data7aCont <- my_data7aCont %>%
+  # filter(grepl("EUROPA", Continent)) %>%
+  rename(Continent = ContAngles) %>%
+  select(NacionalitatAngles,
+         Mes,
+         AdultMenor,
+         Genere,
+         n,
+         lon,
+         lat,
+         Continent
+  ) %>%
+  #    group_by(Nacionalitat_Angles) %>%
+  #    summarise_all(sum) %>%
+  ungroup()
 
-# Get the data selected
-    # # Create a MS Excel Bar chart - Commented out at is produces a defective docx as of March 2018
-    # my_barchart.2017.nacionalitats <- ms_barchart(data = my_data7a,
-    #                                               x = "NacionalitatAngles", 
-    #                                               y = "n",
-    #                                               group = "Continent")
-    # # Afegir gràfic al word
-    # my_doc2 <- read_docx()
-    # my_doc2 <- body_add_chart(my_doc2, chart = my_barchart.2017.nacionalitats, style = "centered")
-    # print(my_doc2, target=file.path(getwd(), docpath, paste0(anydades, ".MSCharts.docx")))
-
-# #Fer diagrama de barres equivalent amb plotly
-# my_data %>% count(NacionalitatAngles) %>%
-#   plot_ly(x = ~NacionalitatAngles, y = ~n)
-# # Error message:
-# # cannot open file 'E:/PortableApps/DropboxPortableAHK/Dropbox/Compartida_AjBCN/Codi/SAIER_Urgencies/.Rproj.user/shared/notebooks/6F6AE320-SAIER_urgencies/1/19E34056D93BB68C/cim9y85b91xdt_t\_rs_html_deps_1e647641ec9.json': No such file or directoryError in file(file, ifelse(append, "a", "w")) : 
-# #  cannot open the connection
-# 
-# #plotly.2017.nacionalitat <- my_data %>% count(NacionalitatAngles, Continent) %>%
-# #  plot_ly(x = ~NacionalitatAngles, y = ~n, color = ~Continent)
-# #plotly.2017.nacionalitat %>% offline(height=600)
-# plotly.2017.nacionalitat 
-# 
-# # Save plotly chart as htmlwidget to disk
-# htmlwidgets::saveWidget(as_widget(plotly.2017.nacionalitat),
-#                         file.path(getwd(), htmlpath, paste0(anydades, ".plotly.nacionalitat.barchart.html"))
-# )
 
 ```
+
 
 
 ```{r Derivacions ggplot2 chart}
@@ -351,7 +343,7 @@ if (crear.informe.word == TRUE) {
 # ggplot with params suitable for displaying on screen and for  officer::body_add_gg
 # --------------------------------------------------------------
 # Basic barplot with ggplot and ggplotly
-ggplot.2017.nacionalitat <- ggplot(data=my_data7a, aes(x=NacionalitatAngles, color=Continent, fill=Continent, y=n)) +
+ggplot.nacionalitat <- ggplot(data=my_data7aCont, aes(x=NacionalitatAngles, color=Continent, fill=Continent, y=n)) +
   geom_bar(stat="identity") +
 #  geom_text(aes(label=n), vjust=1.6, color="white", size=6.5) +
   geom_text(aes(label=n), vjust=-0.2, color="blue", size=2.5) +
@@ -367,12 +359,12 @@ ggplot.2017.nacionalitat <- ggplot(data=my_data7a, aes(x=NacionalitatAngles, col
         )
 
 # Mostra-ho en pantalla també
-ggplot.2017.nacionalitat
+ggplot.nacionalitat
 
 if (crear.png.ggplot.nacionalitat == TRUE) {
   # Grava a disc per si un cas també
   ggsave(paste0(anydades, ".barchart.nacionality.png"),
-       plot = ggplot.2017.nacionalitat,
+       plot = ggplot.nacionalitat,
        width = 30, height = 10, units = "cm", scale=2,
        path=file.path(getwd(), imgpath) 
        )
@@ -386,19 +378,19 @@ if (crear.informe.word == TRUE) {
     body_add_par("", style = "Normal") %>% # blank paragraph
     #body_add_img(src=file.path(getwd(), imgpath, paste0(anydades,".barchart.nacionality.png")),width=6,height=3,style="centered") %>% # Afegit via png de disc
     #  body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_gg(value = ggplot.2017.nacionalitat, style = "centered")   # afegit via objecte ggplot directament (queda millor i no distorsionat!)
+    body_add_gg(value = ggplot.nacionalitat, style = "centered")   # afegit via objecte ggplot directament (queda millor i no distorsionat!)
   
 }
 
 # # Faceting also --------------------------------------
-# ggplot.2017.nacionalitat.faceted <- ggplot(data=my_data7a, aes(x=NacionalitatAngles, color=Continent, fill=Continent, y=n)) +
+# ggplot.nacionalitat.faceted <- ggplot(data=my_data7a, aes(x=NacionalitatAngles, color=Continent, fill=Continent, y=n)) +
 #   geom_bar(stat="identity") +
 #   geom_text(aes(label=n), vjust=1.6, color="white", size=2.5) +
 #   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
 #   facet_wrap(~Continent)
 # 
 # ggsave(paste0(anydades, ".barchart.nacionality.faceted.png"),
-#        plot = ggplot.2017.nacionalitat.faceted,
+#        plot = ggplot.nacionalitat.faceted,
 #        width = 40, height = 10, units = "cm", scale=2,
 #        path=file.path(getwd(), imgpath) 
 #        )
@@ -411,7 +403,7 @@ if (crear.informe.word == TRUE) {
 # 
 # 
 # # Mostra-ho en pantalla també
-# ggplot.2017.nacionalitat.faceted
+# ggplot.nacionalitat.faceted
 
 ```
 
@@ -419,15 +411,15 @@ if (crear.informe.word == TRUE) {
 ```{r Versió ggplotly a partir del ggplot chart}
 
 # Convertir a versió plotly del gràfic de ggplot
-ggplotly.2017.nacionalitat <- ggplotly(p = ggplot.2017.nacionalitat)
+ggplotly.nacionalitat <- ggplotly(p = ggplot.nacionalitat)
 
 if (crear.html.ggplotly.nacionalitat == TRUE) {
-  htmlwidgets::saveWidget(ggplotly.2017.nacionalitat, file=file.path(getwd(), htmlpath, paste0(anydades, ".ggplotly.nacionalitat.html")), selfcontained=TRUE) 
+  htmlwidgets::saveWidget(ggplotly.nacionalitat, file=file.path(getwd(), htmlpath, paste0(anydades, ".ggplotly.nacionalitat.html")), selfcontained=TRUE) 
 }
 
 mostrar.html.ggplotly.nacionalitat <- F
 if (mostrar.html.ggplotly.nacionalitat == TRUE) {
-  ggplotly.2017.nacionalitat
+  ggplotly.nacionalitat
 }
 
 ```
@@ -439,18 +431,30 @@ if (mostrar.html.ggplotly.nacionalitat == TRUE) {
 # Get the data selected
 my_data7b <- my_data %>% 
   count(NacionalitatAngles, 
-        Continent,
-        MesDerivacioSAIER,
+        Mes,
         wt = NULL, sort = FALSE) %>%
   filter(!is.na(NacionalitatAngles))
 
+# Afegir Continent
+my_data7b$NacionalitatAngles <- apply(my_data7b, 2, toupper)
+# Add coordinates to the countries from the Dades sheet, using left_join
+my_data7bCont <- my_data7b %>% 
+  left_join(geodata, by = c("NacionalitatAngles" = "PaisAngles")) %>%
+  rename(Continent = ContAngles) %>%
+  select(NacionalitatAngles,
+         Mes,
+         n,
+         Continent
+  ) %>%
+  ungroup()
+
   # basic treemaps
     png(filename=file.path(getwd(), imgpath, paste0(anydades, ".treemap.nacionality.png")), width=1200, height=600, units="px")
-    p2017.nacio=treemap(my_data7b,
+    p2017.nacio=treemap(my_data7bCont,
                         index=c("Continent","NacionalitatAngles"),
                         vSize="n",
                         type="index",
-                        title="Nacionalitats d´Usuaris Derivats del CUESB al SAIER 2017",
+                        title="Nacionalitats d´Usuaris de l'Allotjament en Hostals i Pensions",
                         overlap.labels=1,
                         force.print.labels=TRUE,
                         aspRatio=2,
@@ -484,11 +488,11 @@ my_data7b <- my_data %>%
   # =======================================================
     svgPanZoom(
       svglite:::inlineSVG(
-        treemap(my_data7b,
+        treemap(my_data7bCont,
                 index=c("Continent","NacionalitatAngles"),
                 vSize="n",
                 type="index",
-                title="Nacionalitats d'Usuaris Derivats del CUESB al SAIER 2017",
+                title="Nacionalitats d´Usuaris de l'Allotjament en Hostals i Pensions",
                 overlap.labels=1,
                 force.print.labels=TRUE,
                 aspRatio=2,
@@ -503,35 +507,6 @@ my_data7b <- my_data %>%
 
 ```
 
-### Derivacions CUESB -> SAIER 2017: Nacionalitats Interactive Chart 2017
-
-```{r Derivacions CUESB -> SAIER 2017: Nacionalitats Interactive Chart 2017}
-p2017.nacio.i=d3tree2( p2017.nacio ,  rootname = "Nacionalitats d´Usuaris Derivats del CUESB al SAIER 2017" )
-
-if (crear.html.pnacio.i == TRUE) {
-  saveWidget(p2017.nacio.i, file=file.path(getwd(), htmlpath, paste0(anydades, ".d2tree2.nacionalitat.html")), selfcontained=TRUE) 
-}
-
-if (mostrar.pnacio.i == TRUE) {
-  p2017.nacio.i
-}
-
-```
-
-### Flows (Nacionality vs Origin before entering Spain-Catalonia-Barcelona)
-
-```{r Flows}
-
-# Get the data selected
-# my_data7c is the small dataset to plot arrows from origin to destination when coming into Barcelona. Unused as of March 2018 (too many arrows plotted for a whole year, and therefore, since it was not a "must have", I commented it out a while ago and the corresponding code was not migrated from the R file to this Rmd)
-my_data7c <- my_data %>% 
-  count(ProcedenciaAngles,
-        ContinentProced,
-        MesDerivacioSAIER,
-        wt = NULL, sort = FALSE) %>%
-  filter(!is.na(ProcedenciaAngles))
-  
-```
 
 ### Evolució Mensual
 
@@ -540,15 +515,15 @@ my_data7c <- my_data %>%
 # ggplot2 chart
 # Get the data selected
 my_data7d <- my_data %>% 
-  count(MesDerivacioSAIER,
+  count(Mes,
         wt = NULL,
         sort = FALSE)
 
 ## First look at a quick and dirty version of the future ggplot2 chart (prior to customizations)
-#qplot(data=my_data7d, x=MesDerivacioSAIER, geom="bar") 
+#qplot(data=my_data7d, x=Mes, geom="bar") 
 
 # Basic barplot with ggplot
-ggplot.2017.n.mes <- ggplot(data=my_data7d, aes(x=MesDerivacioSAIER, y=n)) +
+ggplot.2017.n.mes <- ggplot(data=my_data7d, aes(x=Mes, y=n)) +
   geom_bar(stat="identity") +
   geom_text(aes(label=n), vjust=1.6, color="white", size=4.5) +
   labs(x="Mes de Derivació al SAIER", y="N") + 
@@ -709,8 +684,8 @@ if (crear.informe.word == TRUE) {
 
   # Map Age group of users in pie charts over the world map
   # -------------------------------------------------------------
-  my_data6 <- count(my_data, NacionalitatAngles, GrupEdat, wt = NULL, sort = FALSE)
-  my_data6b <- tidyr::spread(my_data6, GrupEdat, n)
+  my_data6 <- count(my_data, NacionalitatAngles, AdultMenor, wt = NULL, sort = FALSE)
+  my_data6b <- tidyr::spread(my_data6, AdultMenor, n)
   if (length(my_data6b) > 3) {
     colnames(my_data6b)[4] <- "desconegut"
   } else {
@@ -805,13 +780,13 @@ if (crear.informe.word == TRUE) {
 # ggplot2 chart
 # Get the data selected
 my_data7e <- my_data %>% 
-  count(GrupEdat,
+  count(AdultMenor,
         Nacionalitat,
         Continent,
         wt = NULL,
         sort = FALSE) %>%
   filter(!is.na(Nacionalitat)) %>%
-  filter(GrupEdat == "Menor")
+  filter(AdultMenor == "Menor")
 
 ## First look at a quick and dirty version of the future ggplot2 chart (prior to customizations)
 #qplot(data=my_data7e, x=NacionalitatAngles, geom="bar") 
@@ -869,8 +844,8 @@ if (crear.informe.word == TRUE) {
 ```{r Gender of users}
   
   # -------------------------------------------------------------
-  my_data5d <- count(my_data, NacionalitatAngles, HomeDona, wt = NULL, sort = FALSE)
-  my_data5d <- tidyr::spread(my_data5d, HomeDona, n)
+  my_data5d <- count(my_data, NacionalitatAngles, Genere, wt = NULL, sort = FALSE)
+  my_data5d <- tidyr::spread(my_data5d, Genere, n)
   if (length(my_data5d) > 3) {
     colnames(my_data5d)[4] <- "Desconegut"
   } else {
@@ -996,7 +971,7 @@ if (crear.informe.word == TRUE) {
 #   width="1200px", 
 #   height="800px",   
 # #  inclusions = list( Perfil = list("NO CONSTA")),
-#   exclusions = list( MesDerivacioSAIER = list( "2018-01")),
+#   exclusions = list( Mes = list( "2018-01")),
 #   rendererName = "Bar Chart"
 #   )
 # frameWidget(pt.2017.SA.g)
@@ -1073,7 +1048,7 @@ my_data7d <- my_data %>%
       count(SituacioAdministrativa,
             PaisTramitSituacioAdministrativa,
             Perfil, 
-            MesDerivacioSAIER,
+            Mes,
             wt = NULL, sort = FALSE)
 
 # Option 1) Create the pivot table and save html on disk
@@ -1081,14 +1056,14 @@ my_data7d <- my_data %>%
 #pt <- rpivotTable(my_data7d)
 pt.2017.SA.t <- rpivotTable(
   data = my_data7d, 
-  rows = c("MesDerivacioSAIER"), 
+  rows = c("Mes"), 
   cols=c("SituacioAdministrativa"), 
   vals = "n", 
   aggregatorName = "Sum", 
   width="1200px", 
   height="800px",   
 #  inclusions = list( Perfil = list("NO CONSTA")),
-  exclusions = list( MesDerivacioSAIER = list( "2018-01")),
+  exclusions = list( Mes = list( "2018-01")),
   rendererName = "Heatmap"
   )
 frameWidget(pt.2017.SA.t)
@@ -1119,7 +1094,7 @@ if (mostrar.html.pt.SA.t == TRUE) {
 # Opció 2) Segon intent de crear el heatmap table. Ara amb el paquet formattable
 # ...........................................
  my_data7d.t <- my_data %>% 
-       count(MesDerivacioSAIER,
+       count(Mes,
              SituacioAdministrativa,
              wt = NULL, sort = FALSE) %>%
    tidyr::spread(SituacioAdministrativa, n)
@@ -1565,7 +1540,7 @@ if (crear.informe.word == TRUE) {
 # Get the data selected
 my_data7j.saier <- my_data %>% 
   count(AlertesOrientacionsDe,
-        MesDerivacioSAIER,
+        Mes,
         wt = NULL,
         sort = FALSE) %>%
   filter(AlertesOrientacionsDe == "SAIER") 
@@ -1573,10 +1548,10 @@ my_data7j.saier <- my_data %>%
 
 # ggplot2 chart
 ## First look at a quick and dirty version of the future ggplot2 chart (prior to customizations)
-#qplot(data=my_data7j.saier, x=MesDerivacioSAIER, geom="bar") 
+#qplot(data=my_data7j.saier, x=Mes, geom="bar") 
 
 # Basic barplot with ggplot
-ggplot.2017.n.mes.saier <- ggplot(data=my_data7j.saier, aes(x=MesDerivacioSAIER, y=n)) +
+ggplot.2017.n.mes.saier <- ggplot(data=my_data7j.saier, aes(x=Mes, y=n)) +
   geom_bar(stat="identity") +
   geom_text(aes(label=n), vjust=-0.2, color="blue", size=4.5) +
   labs(x="Mes de Derivació del SAIER al CUESB", y="N") + 
