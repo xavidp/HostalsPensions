@@ -107,7 +107,7 @@ if (!require("mschart")) install.packages("mschart"); library(mschart)
 
 ```{r paràmetres inicials}
 #Paràmetre per controlar l'any (anydades)
-anydades <- "2017"
+anydades <- "2018"
 
 #Paths
 htmlpath      <- "Html"; dir.create(htmlpath, recursive = TRUE, showWarnings = FALSE)
@@ -192,12 +192,12 @@ if (crear.informe.word == TRUE) {
   require(officer)
   require(magrittr)
   
-  my_doc <- read_docx(path=file.path(getwd(), templatepath, paste0(anydades, ".Word_AAI_template_v03.docx")) )
+  my_doc <- read_docx(path=file.path(getwd(), templatepath, "Word_AAI_template_v03.docx") )
   #my_doc <- read_docx()
   # styles_info(my_doc)
   
   my_doc <- my_doc %>% 
-    body_add_par(value = paste0("Derivacions del CUESB al SAIER (", anydades, ")"), style = "Title") %>% 
+    body_add_par(value = paste0("Allotjaments en Hostal i Pensions (", anydades, ")"), style = "Title") %>% 
     body_add_par(value = "Índex:", style = "Normal") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
     body_add_toc(level = 3) 
@@ -208,9 +208,10 @@ if (crear.informe.word == TRUE) {
 
 ```{r Lectura i pre-processat dades, echo=TRUE}
 # -----------
-# CUESB Data
+# Source Data
 # -----------
-my_file <- file.path("K:\\QUOTA\\DIMM_COMU\\SAIER\\Urgències\ CUESB", "0 Base de dades_v12.xlsx")
+
+my_file <- file.path("K:\\QUOTA\\DIMM_COMU\\SAIER\\Hostals\ i\ Pensions\\2018\\Estades\ reals", "BD_Estades_Hostals_Pensions_v02.xlsx")
 #my_file <- file.path(".", "bbdd_urgencies_saier_demo.xlsx")
 
 # Read From xlsx sheet
@@ -226,7 +227,7 @@ my_data <- read_excel(my_file, sheet = "Dades")
 head(my_data)
 my_data <- my_data %>% 
 #  filter(ComunicacioDerivacio == "D" | ComunicacioDerivacio == "Derivació")
-  filter(ComunicacioDerivacio == "DERIVACIÓ") %>%
+#  filter(ComunicacioDerivacio == "DERIVACIÓ") %>%
   filter(AnyDerivText == anydades)
 #colnames(my_data)
 
