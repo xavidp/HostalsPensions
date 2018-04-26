@@ -120,9 +120,10 @@ logspath      <- "Logs"; dir.create(logspath, recursive = TRUE, showWarnings = F
 # ----------------
 # Paràmetres per a controlar quines parts del codi s'executen en cada run.
 #
-runParam <- F
+runParam <- T
 
 # Crear addicionalment arxius html parcials amb gràfics interactius (opcional)
+crear.html.pt.membres.t <- runParam
 crear.html.leaflet.agegroups <- runParam
 crear.html.ggplotly.nacionalitat <- runParam
 crear.html.pnacio.i <- F # runParam
@@ -147,9 +148,10 @@ crear.png.ggplot.perfils <- runParam
 crear.png.ggplot.dec.majoria.edat <- runParam
 crear.png.ggplot.n.mes.saier <- runParam
 
-runParam <- F
+runParam <- T
 
 # Mostrar gràfics per pantalla addicionalment (opcional)
+mostrar.html.pt.membres.t <- runParam
 mostrar.pnacio.i <- F #runParam
 mostrar.html.ggplot.n.mes <- runParam
 mostrar.html.ggplot.nacio.menors <- runParam
@@ -274,9 +276,9 @@ head(my_data5b)
 
 ```
 
-## Evolució d'usuaris per categories
+## Evolució d'usuaris Global per categories
 
-```{r Evolució Mensual}
+```{r Evolució Mensual Global per categories}
 
 # ggplot2 chart
 # Get the data selected
@@ -312,7 +314,7 @@ if (crear.informe.word == TRUE) {
   # Afegir contingut a l'informe en Word
   my_doc <- my_doc %>% 
     body_add_break() %>% 
-    body_add_par(value = "Evolució mensual", style = "heading 2") %>% 
+    body_add_par(value = "Evolució mensual Global", style = "heading 1") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
     body_add_gg(value = ggplot.n.mes, style = "centered") %>%  # afegit via objecte ggplot directament (queda millor i no distorsionat!)
     body_add_par("", style = "Normal") %>% # blank paragraph
@@ -368,7 +370,7 @@ if (crear.informe.word == TRUE) {
   #  colors <- c("#4fc13c", "lightyellow", "#cccccc")
   colors <- c("pink", "lightblue", "lightyellow")
   
-  leaflet.2017.gender <- basemap %>%
+  leaflet.gender <- basemap %>%
     addMinicharts(
       my_data5e$lon, my_data5e$lat,
       type = "pie",
@@ -378,21 +380,17 @@ if (crear.informe.word == TRUE) {
       transitionTime = 0,
       legend=TRUE,
       legendPosition = "topright"
- #   ) %>% 
-#    addLegend("bottomright", title = "Gènere. 2017", pal=colors, values=my_data5e[, c("DONA", "HOME", "Desconegut")], 
-#    labFormat = labelFormat(prefix = "$"),
-#    opacity = 1
   )
   
   if (crear.html.leaflet.gender == TRUE) {
-    saveWidget(leaflet.2017.gender, file=file.path(getwd(), htmlpath, paste0(anydades, ".leaflet.gender.html")), selfcontained=TRUE) 
+    saveWidget(leaflet.gender, file=file.path(getwd(), htmlpath, paste0(anydades, ".leaflet.gender.html")), selfcontained=TRUE) 
   }
   webshot(file.path(getwd(), htmlpath, paste0(anydades, ".leaflet.gender.html")),
         file=file.path(getwd(), imgpath, paste0(anydades, ".leaflet.gender.png")),
         delay=0.5, selector="#htmlwidget_container")
   
   if (mostrar.html.leaflet.gender == TRUE) {
-    leaflet.2017.gender
+    leaflet.gender
   }
 
   if (crear.informe.word == TRUE) {
@@ -429,7 +427,7 @@ if (crear.informe.word == TRUE) {
   svglite(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.svg")), width = 12, height = 6)
 
   
-  worldmap.2017.familysize <- mapCountryData(my_mapped_data, 
+  worldmap.familysize <- mapCountryData(my_mapped_data, 
                  nameColumnToPlot = "Membres", 
                  catMethod="pretty",
                  colourPalette="heat", 
@@ -441,7 +439,7 @@ if (crear.informe.word == TRUE) {
 
   # Redo as png
   png(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width=1200, height=700, units="px")
-  worldmap.2017.familysize <- mapCountryData(my_mapped_data, 
+  worldmap.familysize <- mapCountryData(my_mapped_data, 
                  nameColumnToPlot = "Membres", 
                  catMethod="pretty",
                  colourPalette="heat", 
@@ -466,7 +464,7 @@ if (crear.informe.word == TRUE) {
   # =======================================================
   svgPanZoom(
     svglite:::inlineSVG(
-      worldmap.2017.familysize <- mapCountryData(my_mapped_data, 
+      worldmap.familysize <- mapCountryData(my_mapped_data, 
                                                  nameColumnToPlot = "Membres", 
                                                  catMethod="pretty",
                                                  colourPalette="heat", 
@@ -518,6 +516,50 @@ if (crear.informe.word == TRUE) {
   }
   
   
+```
+
+### Taula Resum
+
+```{r Taula Resum Mida Unitats Familiars}
+pt.membres.t <- rpivotTable(
+  data = my_data, 
+  rows = c("Nacionalitat"), 
+  cols=c("Categoria"), 
+  vals = "Membres", 
+  aggregatorName = "Average", 
+  width="1200px", 
+  height="800px",   
+#  inclusions = list( Categoria = list("NO CONSTA")),
+#  exclusions = list( Mes = list( "2018-01")),
+  rendererName = "Heatmap"
+  )
+frameWidget(pt.membres.t)
+
+if (crear.html.pt.membres.t == TRUE) {
+  saveWidget(pt.membres.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.t.html")), selfcontained=TRUE) 
+}
+webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.t.html")),
+        file=file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.t.png")),
+#        delay=0.5, selector=".pvtUi") # to get both the heatmap table and buttons of variables in rows and columns surrounding it
+        delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+
+if (mostrar.html.pt.membres.t == TRUE) {
+  pt.membres.t
+}
+
+  if (crear.informe.word == TRUE) {
+    
+    # Afegir contingut a l'informe en Word
+    my_doc <- my_doc %>% 
+      body_add_break() %>% 
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      body_add_par(value = "D'on són les famílies més nombroses", style = "heading 2") %>% 
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.t.png")), width = 6, height = 3, style = "centered") %>% 
+      body_add_par("La intensitat del color vermell és proporcional a la suma de casos de cada tipus", style = "Balloon Text")
+    
+  }
+
 ```
 
 
@@ -824,7 +866,7 @@ if (crear.informe.word == TRUE) {
     body_add_par(value = "Nacionalitats més freqüents", style = "heading 2") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
     body_add_table(my_data7a.top10, style = "table_template") %>%
-    body_add_par(value = "10 Nacionalitats més freqüents en 2017", style = "table title")
+    body_add_par(value = "10 Nacionalitats més freqüents", style = "table title")
   
 }
 
@@ -1013,7 +1055,7 @@ ggplot.motiu <- ggplot(data=my_data9, aes(x=MotiuAllotjament, fill=Categoria, y=
         axis.text.y = element_text(size=8),
         axis.title.x = element_text(size=8),
         axis.title.y = element_text(angle = 90, hjust = 0.5, vjust=0.5, size=10),
-        legend.position = "right",
+        legend.position = "top",
         legend.title = element_text(size=12),
         legend.text = element_text(size=10)
         )
@@ -1277,7 +1319,7 @@ if (crear.informe.word == TRUE) {
 ```
 
 
-```{r Idem d'Origens dels menors en taula}
+```{r Idem dels Origens dels menors en taula}
  my_data7e.t <- my_data7e[,-1] %>% 
    tidyr::spread(Categoria, n)
 
@@ -1343,303 +1385,149 @@ if (crear.html.dt.origens.menors == TRUE) {
 ```
 
 
+## Refugiats
+### Previsió de Sortida - Resum
 
-
-## Categories
-
-### Resum
-
-```{r Resum Categories}
+```{r Refugiats - Previsió de Sortida - Resum}
 
 # ggplot2 chart
 # Get the data selected
-my_data7h <- my_data %>% 
-  count(Categoria,
+my_data10 <- my_data %>% 
+  filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
+  count(PrevisioSortida,
+        Categoria,
         wt = NULL,
-        sort = FALSE) %>%
-  filter(!is.na(Categoria)) 
-# Afegir fila a sota amb totals
-my_data7h.t <- rbind(my_data7h,
-      c("*** TOTALS ***", margin.table(as.matrix(my_data7h$n), 2))
-)
+        sort = FALSE) 
+ 
+ my_data10.t <- my_data10 %>% 
+   tidyr::spread(Categoria, n)
+  
 
 if (crear.informe.word == TRUE) {
   
   # Afegir contingut a l'informe en Word
   my_doc <- my_doc %>% 
     body_add_break() %>% 
-    body_add_par(value = "Categories", style = "heading 1") %>% 
+    body_add_par(value = "Refugiats", style = "heading 1") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Resum", style = "heading 2") %>% 
+    body_add_par(value = "Previsió de Sortida - Resum", style = "heading 2") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_table(my_data7h.t, style = "table_template")
+    body_add_table(my_data10.t, style = "table_template")
   
 }
 
 ```
 
-### Gràfic de barres de Categories
+### Canvis a Situació Programa de Refugiats - Entrades
 
-```{r Gràfic de barres de Categories, echo=TRUE}
-
-# Gràfic de barres ara
-# ----------------------------------------
-## First look at a quick and dirty version of the future ggplot2 chart (prior to customizations)
-#qplot(data=my_data7h, x=Categoria, geom="bar") 
-
-# Basic barplot with ggplot
-ggplot.2017.perfils <- ggplot(data=my_data7h, aes(x=Categoria, y=n)) +
-  geom_bar(stat="identity") +
-  #scale_x_discrete(breaks = NULL) +
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-  geom_text(aes(label=n), vjust=-0.1, color="blue", size=4.5) +
-  labs(x="Categories", y="N") + 
-  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust=0.5, size=8),
-        axis.text.y = element_text(size=10),
-        axis.title.x = element_text(size=10),
-        axis.title.y = element_text(angle = 0, hjust = 0.5, vjust=0.5, size=10),
-        legend.position = "top",
-        legend.title = element_text(size=12),
-        legend.text = element_text(size=10)
-        )
-
-if (crear.png.ggplot.perfils == TRUE) {
-  ggsave(paste0(anydades, ".barchart.perfils.png"),
-       plot = ggplot.2017.perfils,
-       width = 15, height = 8, units = "cm", scale=2,
-       path=file.path(getwd(), imgpath) 
-       )
-}
-
-if (mostrar.ggplot.perfils == TRUE) {
-  # Mostra-ho en pantalla també
-  ggplot.2017.perfils
-}
-
-if (crear.informe.word == TRUE) {
-  
-  # Afegir contingut a l'informe en Word
-  my_doc <- my_doc %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".barchart.perfils.png")), width = 6, height = 3, style = "centered")  
-    body_add_gg(value = ggplot.2017.perfils, style = "centered") %>%  # afegit via objecte ggplot directament (queda millor i no distorsionat!)
-    body_add_par("", style = "Normal") # blank paragraph
-  
-}
-
-```
-
-### Decretada Majoria d'Edat
-
-```{r Decretada Majoria Edat}
+```{r Canvis a Situació Programa de Refugiats - Entrades}
 
 # Get the data selected
-my_data7i <- my_data %>% 
-  count(Categoria,
-        Nacionalitat,
+my_data11 <- my_data %>% 
+  filter(!is.na(DataIniciAllotjament)) %>%
+  filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
+  count(Mes,
+        Categoria,
         wt = NULL,
-        sort = FALSE) %>%
-  filter(!is.na(Nacionalitat)) %>%
-  filter(Categoria == "Decretada o recent majoria d'edat (Refugiat o Immigrant)")
-# Afegir fila a sota amb totals
-my_data7i.t <- rbind(my_data7i[-1],
-      c("*** TOTALS ***", margin.table(as.matrix(my_data7i$n), 2))
-)
+        sort = FALSE)
+
+ my_data11.t <- my_data11 %>% 
+   tidyr::spread(Categoria, n)
+  
 
 if (crear.informe.word == TRUE) {
   
   # Afegir contingut a l'informe en Word
   my_doc <- my_doc %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Decretada majoria d'edat", style = "heading 2") %>% 
+    body_add_par(value = "Canvis a Situació Programa de Refugiats - Entrades", style = "heading 2") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_table(my_data7i.t, style = "table_template") %>%
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par("Nacionalitat dels menors amb majoria d'edat decretada o recent (Refugiat o Immigrant)", style = "Balloon Text")
+    body_add_table(my_data11.t, style = "table_template")
   
 }
 
-# ggplot2 chart
-  # Gràfic de barres ara
-# ----------------------------------------
-## First look at a quick and dirty version of the future ggplot2 chart (prior to customizations)
-#qplot(data=my_data7h, x=Categoria, geom="bar") 
 
-# Basic barplot with ggplot
-ggplot.2017.dec.majoria.edat <- ggplot(data=my_data7i, aes(x=Nacionalitat, y=n)) +
-  geom_bar(stat="identity") +
-  #scale_x_discrete(breaks = NULL) +
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-  geom_text(aes(label=n), vjust=1.6, color="white", size=4.5) +
-  labs(x="Nacionalitat dels menors amb majoria d'edat decretada", y="N") + 
-  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust=0.5, size=10),
-        axis.text.y = element_text(size=12),
-        axis.title.x = element_text(size=10),
-        axis.title.y = element_text(angle = 0, hjust = 0.5, vjust=0.5, size=12),
-        legend.position = "none",
-        legend.title = element_text(size=12),
-        legend.text = element_text(size=10)
-        )
 
-if (crear.png.ggplot.dec.majoria.edat == TRUE) {
-  ggsave(paste0(anydades, ".barchart.dec.majoria.edat.png"),
-       plot = ggplot.2017.dec.majoria.edat,
-       width = 15, height = 8, units = "cm", scale=2,
-       path=file.path(getwd(), imgpath) 
-       )
-}
-
-if (mostrar.ggplot.dec.majoria.edat == TRUE) {
-  # Mostra-ho en pantalla també
-  ggplot.2017.dec.majoria.edat
-}
-
-if (crear.informe.word == TRUE) {
-  
-  # Afegir contingut a l'informe en Word
-  my_doc <- my_doc %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".barchart.dec.majoria.edat.png")), width = 6, height = 3, style = "centered")
-    body_add_gg(value = ggplot.2017.dec.majoria.edat, style = "centered") %>%  # afegit via objecte ggplot directament (queda millor i no distorsionat!)
-    body_add_par("", style = "Normal") # blank paragraph
-  
-}
 
 ```
 
-## Motiu Allotjament
+### Canvis a Situació Programa de Refugiats - Sortides
 
-### Resum
+```{r Canvis a Situació Programa de Refugiats - Sortides}
 
-```{r Resum Origen Derivacions}
 
 # Get the data selected
-#data.frame(table(my_data$AlertesOrientacionsDe))
-my_data7j <- my_data %>% 
-  count(AlertesOrientacionsDe,
+my_data12 <- my_data %>% 
+  filter(!is.na(DataSortida)) %>%
+  filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
+  count(Mes,
+        Categoria,
         wt = NULL,
-        sort = FALSE)  
-# Afegir fila a sota amb totals
-my_data7j.t <- rbind(my_data7j,
-      c("*** TOTALS ***", margin.table(as.matrix(my_data7j$n), 2))
-)
-colnames(my_data7j.t) <- c("Orígens", "N")
+        sort = FALSE)
+
+ my_data12.t <- my_data12 %>% 
+   tidyr::spread(Categoria, n)
+  
 
 if (crear.informe.word == TRUE) {
   
   # Afegir contingut a l'informe en Word
   my_doc <- my_doc %>% 
-    body_add_break() %>% 
-    body_add_par(value = "Origen de les Derivacions al CUESB", style = "heading 1") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Resum", style = "heading 2") %>% 
+    body_add_par(value = "Canvis a Situació Programa de Refugiats - Sortides", style = "heading 2") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_table(my_data7j.t, style = "table_template")
+    body_add_table(my_data12.t, style = "table_template")
   
 }
 
 
-```
-### Evolució mensual de les derivacions del SAIER al CUESB
 
-```{r Evolució mensual de les derivacions del SAIER al CUESB}
+
+```
+
+### Situació de Refugiats Fora de Programa Estatal
+
+```{r Situació de Refugiats Fora de Programa Estatal}
 
 # Get the data selected
-my_data7j.saier <- my_data %>% 
-  count(AlertesOrientacionsDe,
-        Mes,
+my_data13 <- my_data %>% 
+  filter(Categoria == "Refus-FP") %>%
+  count(Mes,
+        SituacioProgramaRefugiats,
         wt = NULL,
-        sort = FALSE) %>%
-  filter(AlertesOrientacionsDe == "SAIER") 
+        sort = FALSE)
 
-
-# ggplot2 chart
-## First look at a quick and dirty version of the future ggplot2 chart (prior to customizations)
-#qplot(data=my_data7j.saier, x=Mes, geom="bar") 
-
-# Basic barplot with ggplot
-ggplot.n.mes.saier <- ggplot(data=my_data7j.saier, aes(x=Mes, y=n)) +
-  geom_bar(stat="identity") +
-  geom_text(aes(label=n), vjust=-0.2, color="blue", size=4.5) +
-  labs(x="Mes de Derivació del SAIER al CUESB", y="N") + 
-  #scale_fill_discrete(name="Continents") + # Legend Title
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5, size=12),
-        axis.text.y = element_text(size=12),
-        axis.title.x = element_text(size=12),
-        axis.title.y = element_text(angle = 0, hjust = 0.5, vjust=0.5, size=12),
-        legend.position = "none",
-        legend.title = element_text(size=12),
-        legend.text = element_text(size=10)
-        )
-
-if (crear.png.ggplot.n.mes.saier == TRUE) {
-  ggsave(paste0(anydades, ".barchart.n.mes.saier.png"),
-       plot = ggplot.n.mes.saier,
-       width = 15, height = 8, units = "cm", scale=2,
-       path=file.path(getwd(), imgpath) 
-       )
-}
-
-if (mostrar.ggplot.n.mes.saier == TRUE) {
-  # Mostra-ho en pantalla també
-  ggplot.n.mes.saier
-}
+ my_data13.t <- my_data13 %>% 
+   tidyr::spread(SituacioProgramaRefugiats, n)
+ colnames.short <- stringr::str_replace_all(colnames(my_data13.t)[-1], "Fora de programa. ", "")
+ colnames(my_data13.t)[-1] <- colnames.short
+  
+ my_data13.t <- cbind(rbind(my_data13.t[,1], "TOTAL"), 
+                       as_tibble(addmargins(as.matrix(impute(my_data13.t[,-1], 0))))
+                      ) 
+my_data13.t <- rename(my_data13.t, TOTAL = Sum)
 
 if (crear.informe.word == TRUE) {
   
   # Afegir contingut a l'informe en Word
   my_doc <- my_doc %>% 
-    body_add_break() %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Evolució mensual", style = "heading 2") %>% 
+    body_add_par(value = "Situació de Refugiats Fora de Programa Estatal", style = "heading 2") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".barchart.n.mes.saier.png")), width = 6, height = 3, style = "centered") %>% 
-    body_add_gg(value = ggplot.n.mes.saier, style = "centered") %>%  # afegit via objecte ggplot directament (queda millor i no distorsionat!)
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par("Evolució mensual de les derivacions d'usuaris del SAIER al CUESB (abans de que el tornin a derivar del CUESB al SAIER un altre cop)", style = "Balloon Text")
+    body_add_table(my_data13.t, style = "table_template")
   
 }
 
-```
 
-## Recurrència
 
-### Percentatge de casos en que l'usuari torna una 2a vegada o més
-
-```{r Recurrència}
-
-# Get the data selected
-my_data7k <- my_data %>% 
-  count(Expedient,
-        wt = NULL,
-        sort = TRUE) %>%
-  filter(n > 0) %>%
-  filter(Expedient != "NO CONSTA") %>%
-  count(n,
-      wt = NULL,
-      sort = TRUE)
-
-# Afegir fila a sota amb totals
-my_data7k.t <- rbind(my_data7k,
-      c("*** TOTALS ***", margin.table(as.matrix(my_data7k$nn), 2))
-)
-colnames(my_data7k.t) <- c("Nombre de visites", "Casos")
-
-if (crear.informe.word == TRUE) {
-  
-  # Afegir contingut a l'informe en Word
-  my_doc <- my_doc %>% 
-    body_add_break() %>% 
-    body_add_par(value = "Recurrència", style = "heading 1") %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Visites de la mateixa persona al CUESB", style = "heading 2") %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_table(my_data7k.t, style = "table_template") %>%
-    body_add_par("Aquesta taula correspon només als informes de derivació en que consta el número d'expedient únic d'usuari.", style = "Balloon Text")
-  
-}
 
 ```
+
+
+## Despesa
+Per mesos i categoria d'usuaris
+
+
 
 ## Escriure informe en Word
 
@@ -1648,7 +1536,7 @@ if (crear.informe.word == TRUE) {
   
   print(my_doc, target=file.path(getwd(),
                                  docpath,
-                                 paste0(paste0(anydades, ".Derivacions_CUESB_a_SAIER_v"), 
+                                 paste0(paste0(anydades, ".Allotjament_HostalsPensions_v"), 
                                         format(Sys.Date(), 
                                                format="%y%m%d"
                                         ),
