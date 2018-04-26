@@ -338,8 +338,8 @@ if (crear.informe.word == TRUE) {
   my_data5e <- my_data5e %>%
     # filter(grepl("EUROPA", Continent)) %>%
     select(NacionalitatAngles,
-           Dona,
-           Home,
+           DONA,
+           HOME,
            Desconegut,
            lon,
            lat
@@ -350,6 +350,15 @@ if (crear.informe.word == TRUE) {
   
   head(my_data5e)
   
+  # Get the basemap ready for the leaflet plot
+  library(leaflet.minicharts)
+  library(leaflet)
+  
+  tilesURL <- "http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+  
+  basemap <- leaflet(width = "100%", height = "400px") %>%
+    addTiles(tilesURL)
+
   #We now add to the base map a pie chart for each country of origin
   #  colors <- c("#4fc13c", "lightyellow", "#cccccc")
   colors <- c("pink", "lightblue", "lightyellow")
@@ -358,14 +367,14 @@ if (crear.informe.word == TRUE) {
     addMinicharts(
       my_data5e$lon, my_data5e$lat,
       type = "pie",
-      chartdata = my_data5e[, c("Dona", "Home", "Desconegut")], 
+      chartdata = my_data5e[, c("DONA", "HOME", "Desconegut")], 
       fillColor = "white",
       colorPalette = colors, 
       transitionTime = 0,
       legend=TRUE,
       legendPosition = "topright"
  #   ) %>% 
-#    addLegend("bottomright", title = "Gènere. 2017", pal=colors, values=my_data5e[, c("Dona", "Home", "Desconegut")], 
+#    addLegend("bottomright", title = "Gènere. 2017", pal=colors, values=my_data5e[, c("DONA", "HOME", "Desconegut")], 
 #    labFormat = labelFormat(prefix = "$"),
 #    opacity = 1
   )
@@ -395,6 +404,117 @@ if (crear.informe.word == TRUE) {
   }
   
 ```
+
+## Nuclis familiars
+
+```{r Membres de les Unitats Familiars}
+# Plot Map Using rworldmap
+
+  my_mapped_data <- joinCountryData2Map(my_data, joinCode = "NAME", 
+                                     nameJoinColumn = "NacionalitatAngles")
+
+  # The par command only needs to be performed once in the session and just makes sure that all the available space in the window is used to display the map.
+  par(mai=c(0,0,0.2,0),xaxs="i",yaxs="i")
+
+  my_mapped_data$Membres <- as.numeric(my_mapped_data$Membres)
+  
+#  png(filename=file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width=1200, height=600, units="px")
+#  png(filename=file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")))
+  # Plot as svg
+  svglite(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.svg")), width = 12, height = 6)
+
+  
+  worldmap.2017.familysize <- mapCountryData(my_mapped_data, 
+                 nameColumnToPlot = "Membres", 
+                 catMethod="pretty",
+                 colourPalette="heat", 
+                 mapTitle = "", 
+                 oceanCol = "lightblue",
+                 missingCountryCol = "white")
+  
+  dev.off()
+
+  # Redo as png
+  png(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width=1200, height=700, units="px")
+  worldmap.2017.familysize <- mapCountryData(my_mapped_data, 
+                 nameColumnToPlot = "Membres", 
+                 catMethod="pretty",
+                 colourPalette="heat", 
+                 mapTitle = "", 
+                 oceanCol = "lightblue",
+                 missingCountryCol = "white")
+  dev.off()
+  
+  # Pending-2
+  # =======================================================
+  # Improve type of chart with the thematic maps package
+  # See: https://github.com/mtennekes/tmap
+  # =======================================================
+  # 
+  #
+  #   if (!require("tmap")) install.packages("tmap")
+
+
+  # =======================================================
+  # Add svgPanZoom capabilities to standard Plots
+  # See: https://github.com/timelyportfolio/svgPanZoom
+  # =======================================================
+  svgPanZoom(
+    svglite:::inlineSVG(
+      worldmap.2017.familysize <- mapCountryData(my_mapped_data, 
+                                                 nameColumnToPlot = "Membres", 
+                                                 catMethod="pretty",
+                                                 colourPalette="heat", 
+                                                 mapTitle = "Número de Membres de la Unitat Familiar", 
+                                                 oceanCol = "lightblue",
+                                                 missingCountryCol = "white")
+    )
+  )
+  
+  # render it into a bitmap array
+  bitmap <- rsvg(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.svg")))
+  dim(bitmap)
+  ## [1] 504 720   4
+
+  # write to format
+  png::writePNG(bitmap, 
+                file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_writepng.png")),
+                dpi = 144)
+  rsvg_png(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.svg")),
+           file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_rsvg.png")),
+           width = 1600) # If you only set width OR height, the image will be scaled keeping aspect ratio
+
+
+  # Redimensionar mantenint proporcions amb imagemagick
+  my_image <- image_read(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")))
+  image_info(my_image)
+  # Trim image
+  my_image_trimmed <- image_trim(my_image)
+  image_info(my_image_trimmed)
+  image_write(my_image_trimmed, path = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_trimmed.png")))
+  # Re-scale image
+  my_image_scaled <- image_scale(my_image_trimmed, "2000") # width to 2000px and height proportional to keep aspect ratio
+  image_write(my_image_scaled, path = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_2000px.png")))
+           
+  if (crear.informe.word == TRUE) {
+    
+    # Afegir contingut a l'informe en Word
+    my_doc <- my_doc %>% 
+      body_add_break() %>% 
+      body_add_par(value = "Nuclis familiars", style = "heading 1") %>% 
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      body_add_par(value = "D'on són les famílies més nombroses o els individus sols?", style = "heading 2") %>% 
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width = 6, height = 3, style = "centered") %>% 
+      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_2000px.png")), width = 6, height = 3, style = "centered") %>% 
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      body_add_par("Nombre d´individus a cada nucli familiar", style = "Balloon Text")
+    
+  }
+  
+  
+```
+
 
 ## Nacionalitats
 
@@ -636,115 +756,6 @@ my_data7bCont <- my_data7b %>%
 
 
 
-## Nuclis familiars
-
-```{r Membres de les Unitats Familiars}
-# Plot Map Using rworldmap
-
-  my_mapped_data <- joinCountryData2Map(my_data, joinCode = "NAME", 
-                                     nameJoinColumn = "NacionalitatAngles")
-
-  # The par command only needs to be performed once in the session and just makes sure that all the available space in the window is used to display the map.
-  par(mai=c(0,0,0.2,0),xaxs="i",yaxs="i")
-
-  my_mapped_data$NMembresNucli <- as.numeric(my_mapped_data$NMembresNucli)
-  
-#  png(filename=file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width=1200, height=600, units="px")
-#  png(filename=file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")))
-  # Plot as svg
-  svglite(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.svg")), width = 12, height = 6)
-
-  
-  worldmap.2017.familysize <- mapCountryData(my_mapped_data, 
-                 nameColumnToPlot = "NMembresNucli", 
-                 catMethod="pretty",
-                 colourPalette="heat", 
-                 mapTitle = "", 
-                 oceanCol = "lightblue",
-                 missingCountryCol = "white")
-  
-  dev.off()
-
-  # Redo as png
-  png(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width=1200, height=700, units="px")
-  worldmap.2017.familysize <- mapCountryData(my_mapped_data, 
-                 nameColumnToPlot = "NMembresNucli", 
-                 catMethod="pretty",
-                 colourPalette="heat", 
-                 mapTitle = "", 
-                 oceanCol = "lightblue",
-                 missingCountryCol = "white")
-  dev.off()
-  
-  # Pending-2
-  # =======================================================
-  # Improve type of chart with the thematic maps package
-  # See: https://github.com/mtennekes/tmap
-  # =======================================================
-  # 
-  #
-  #   if (!require("tmap")) install.packages("tmap")
-
-
-  # =======================================================
-  # Add svgPanZoom capabilities to standard Plots
-  # See: https://github.com/timelyportfolio/svgPanZoom
-  # =======================================================
-  svgPanZoom(
-    svglite:::inlineSVG(
-      worldmap.2017.familysize <- mapCountryData(my_mapped_data, 
-                                                 nameColumnToPlot = "NMembresNucli", 
-                                                 catMethod="pretty",
-                                                 colourPalette="heat", 
-                                                 mapTitle = "Número de Membres de la Unitat Familiar", 
-                                                 oceanCol = "lightblue",
-                                                 missingCountryCol = "white")
-    )
-  )
-  
-  # render it into a bitmap array
-  bitmap <- rsvg(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.svg")))
-  dim(bitmap)
-  ## [1] 504 720   4
-
-  # write to format
-  png::writePNG(bitmap, 
-                file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_writepng.png")),
-                dpi = 144)
-  rsvg_png(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.svg")),
-           file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_rsvg.png")),
-           width = 1600) # If you only set width OR height, the image will be scaled keeping aspect ratio
-
-
-  # Redimensionar mantenint proporcions amb imagemagick
-  my_image <- image_read(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")))
-  image_info(my_image)
-  # Trim image
-  my_image_trimmed <- image_trim(my_image)
-  image_info(my_image_trimmed)
-  image_write(my_image_trimmed, path = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_trimmed.png")))
-  # Re-scale image
-  my_image_scaled <- image_scale(my_image_trimmed, "2000") # width to 2000px and height proportional to keep aspect ratio
-  image_write(my_image_scaled, path = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_2000px.png")))
-           
-  if (crear.informe.word == TRUE) {
-    
-    # Afegir contingut a l'informe en Word
-    my_doc <- my_doc %>% 
-      body_add_break() %>% 
-      body_add_par(value = "Nuclis familiars", style = "heading 1") %>% 
-      body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_par(value = "D'on són les famílies més nombroses o els individus sols?", style = "heading 2") %>% 
-      body_add_par("", style = "Normal") %>% # blank paragraph
-      #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width = 6, height = 3, style = "centered") %>% 
-      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_2000px.png")), width = 6, height = 3, style = "centered") %>% 
-      body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_par("Nombre d´individus a cada nucli familiar", style = "Balloon Text")
-    
-  }
-  
-  
-```
 
 ### Age group of users. World map with pie charts
 
@@ -785,14 +796,6 @@ my_data7bCont <- my_data7b %>%
   
   head(my_data6d)
   
-  # Get the basemap ready for the leaflet plot
-  library(leaflet.minicharts)
-  library(leaflet)
-  
-  tilesURL <- "http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-  
-  basemap <- leaflet(width = "100%", height = "400px") %>%
-    addTiles(tilesURL)
   
   colors <- c("green", "lightgreen", "orange")
   
