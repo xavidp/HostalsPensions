@@ -133,7 +133,7 @@ crear.html.pt.durada.t <- runParam
 crear.html.dt.regim.allotjament.month <- runParam
 crear.html.dt.motiu <- runParam
 crear.html.dt.origens.menors <- runParam
-crear.html.sankey.sa.plot <- runParam
+crear.html.pt.despesa.t <- runParam
 
 runParam <- T
 
@@ -162,8 +162,7 @@ mostrar.html.pt.durada.t <- runParam
 mostrar.png.ggplot.pais.tramit.ue <- runParam
 mostrar.ggplot.perfils <- runParam
 mostrar.ggplot.dec.majoria.edat <- runParam
-mostrar.html.sankey.sa.plot <- runParam
-mostrar.ggplot.n.mes.saier <- runParam
+mostrar.html.pt.despesa.t <- runParam
 
 runParam <- T
 
@@ -1527,6 +1526,48 @@ if (crear.informe.word == TRUE) {
 ## Despesa
 Per mesos i categoria d'usuaris
 
+```{r Despesa Per mesos i categories dels usuaris}
+
+pt.despesa.t <- rpivotTable(
+  data = my_data, 
+  rows = c("Mes", "Categoria"), 
+  cols=c("REGIM"), 
+  vals = "TOTAL", 
+  aggregatorName = "Sum", 
+  width="1200px", 
+  height="800px",   
+#  inclusions = list( Categoria = list("NO CONSTA")),
+#  exclusions = list( Mes = list( "2018-01")),
+  rendererName = "Heatmap"
+  )
+frameWidget(pt.despesa.t)
+
+if (crear.html.pt.despesa.t == TRUE) {
+  saveWidget(pt.despesa.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.despesa.t.html")), selfcontained=TRUE) 
+}
+webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.despesa.t.html")),
+        file=file.path(getwd(), imgpath, paste0(anydades, ".pt.despesa.t.png")),
+#        delay=0.5, selector=".pvtUi") # to get both the heatmap table and buttons of variables in rows and columns surrounding it
+        delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+
+if (mostrar.html.pt.despesa.t == TRUE) {
+  pt.despesa.t
+}
+
+  if (crear.informe.word == TRUE) {
+    
+    # Afegir contingut a l'informe en Word
+    my_doc <- my_doc %>% 
+      body_add_break() %>% 
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      body_add_par(value = "Evolució de la despesa per categoria d'usuaris", style = "heading 2") %>% 
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.despesa.t.png")), width = 6, height = 3, style = "centered") %>% 
+      body_add_par("La intensitat del color vermell és proporcional a la suma de casos de cada tipus", style = "Balloon Text")
+    
+  }
+
+```
 
 
 ## Escriure informe en Word
