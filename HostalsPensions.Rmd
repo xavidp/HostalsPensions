@@ -817,9 +817,6 @@ if (mostrar.html.pt.durada.t == TRUE) {
       body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_par(value = "Evolució mensual i Totals", style = "heading 2") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_table(my_data8.t2, style = "table_template") %>%
-      #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.REGIM.t.png")), width = 6, height = 3, style = "centered") %>% 
-      body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.DURADA.t.png")), width = 6, height = 3, style = "centered") %>% 
       body_add_par("La intensitat del color vermell és proporcional a la suma de casos de cada tipus", style = "Balloon Text")
     
