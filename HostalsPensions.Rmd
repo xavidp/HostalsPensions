@@ -148,7 +148,7 @@ crear.png.ggplot.perfils <- runParam
 crear.png.ggplot.dec.majoria.edat <- runParam
 crear.png.ggplot.n.mes.saier <- runParam
 
-runParam <- T
+runParam <- F
 
 # Mostrar gràfics per pantalla addicionalment (opcional)
 mostrar.html.pt.membres.t <- runParam
@@ -217,7 +217,7 @@ if (crear.informe.word == TRUE) {
 # Source Data
 # -----------
 
-my_file <- file.path("K:\\QUOTA\\DIMM_COMU\\SAIER\\Hostals\ i\ Pensions\\2018\\Estades\ reals", "BD_Estades_Hostals_Pensions_v03.xlsx")
+my_file <- file.path("K:\\QUOTA\\DIMM_COMU\\SAIER\\Hostals\ i\ Pensions\\2018\\Estades\ reals", "BD_Estades_Hostals_Pensions_v04.xlsx")
 #my_file <- file.path(".", "bbdd_urgencies_saier_demo.xlsx")
 
 # Read From xlsx sheet
@@ -231,7 +231,8 @@ my_file <- file.path("K:\\QUOTA\\DIMM_COMU\\SAIER\\Hostals\ i\ Pensions\\2018\\E
 # Specify sheet by its name
 my_data <- read_excel(my_file, sheet = "Dades")
 head(my_data)
-#my_data <- my_data %>% 
+my_data2 <- my_data %>% 
+    filter(grepl("ALLOTJAMENT", REGIM) | grepl("PENSIO", REGIM))
 #  filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
 #  filter(Categoria == "Immis") %>%
 #  filter(Mes == "MARÇ") 
@@ -241,16 +242,8 @@ head(my_data)
 geodata <- read_excel(my_file, sheet = "PaisesContinentes")
 
 # Summarise data based on Country of origin
-my_data4 <- count(my_data, NacionalitatAngles, Mes, AdultMenor, Genere, wt = NULL, sort = FALSE)
-#colnames(my_data4)
+my_data4 <- count(my_data2, NacionalitatAngles, Mes, AdultMenor, Genere, wt = NULL, sort = FALSE)
 my_data4$NacionalitatAngles <- apply(my_data4, 2, toupper)
-#head(my_data4)
-#dim(my_data4)
-
-#colnames(geodata)[7] <- "NacionalitatAngles"
-#colnames(geodata)
-#head(geodata)
-#dim(geodata)
 
 # Add coordinates to the countries from the Dades sheet, using left_join
 my_data5 <- my_data4 %>% left_join(geodata, by = c("NacionalitatAngles" = "PaisAngles"))
@@ -281,8 +274,10 @@ head(my_data5b)
 
 # ggplot2 chart
 # Get the data selected
-my_data7d <- my_data %>% 
+my_data7d <- my_data2 %>% 
+  filter(grepl("ALLOTJAMENT", REGIM) | grepl("PENSIO", REGIM)) %>%
   count(Mes,
+        REGIM,
         Categoria,
         wt = NULL,
         sort = FALSE)
@@ -328,8 +323,14 @@ if (crear.informe.word == TRUE) {
 ```{r Gender of users}
   
   # -------------------------------------------------------------
-  my_data5d <- count(my_data, NacionalitatAngles, Genere, wt = NULL, sort = FALSE)
-  my_data5d <- tidyr::spread(my_data5d, Genere, n)
+my_data5d <- my_data2 %>%
+  count(NacionalitatAngles,
+        Genere,
+        wt = NULL,
+        sort = FALSE
+        )
+  
+my_data5d <- tidyr::spread(my_data5d, Genere, n)
   if (length(my_data5d) > 3) {
     colnames(my_data5d)[4] <- "Desconegut"
   } else {
@@ -412,7 +413,7 @@ if (crear.informe.word == TRUE) {
 ```{r Membres de les Unitats Familiars}
 # Plot Map Using rworldmap
 
-  my_mapped_data <- joinCountryData2Map(my_data, joinCode = "NAME", 
+  my_mapped_data <- joinCountryData2Map(my_data2, joinCode = "NAME", 
                                      nameJoinColumn = "NacionalitatAngles")
 
   # The par command only needs to be performed once in the session and just makes sure that all the available space in the window is used to display the map.
@@ -505,7 +506,7 @@ if (crear.informe.word == TRUE) {
       body_add_break() %>% 
       body_add_par(value = "Nuclis familiars", style = "heading 1") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_par(value = "D'on són les famílies més nombroses o els individus sols?", style = "heading 2") %>% 
+      body_add_par(value = "Mida de les unitats familiars per països", style = "heading 2") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
       #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width = 6, height = 3, style = "centered") %>% 
       body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_2000px.png")), width = 6, height = 3, style = "centered") %>% 
@@ -517,11 +518,11 @@ if (crear.informe.word == TRUE) {
   
 ```
 
-### Taula Resum
+### Taula Resum - Mitjanes
 
-```{r Taula Resum Mida Unitats Familiars}
-pt.membres.t <- rpivotTable(
-  data = my_data, 
+```{r Taula Resum Mida Mitjana Unitats Familiars (més d´un membre)}
+pt.membres.avg.t <- rpivotTable(
+  data = my_data2, 
   rows = c("Nacionalitat"), 
   cols=c("Categoria"), 
   vals = "Membres", 
@@ -529,38 +530,81 @@ pt.membres.t <- rpivotTable(
   width="1200px", 
   height="800px",   
 #  inclusions = list( Categoria = list("NO CONSTA")),
-#  exclusions = list( Mes = list( "2018-01")),
+  exclusions = list( Membres = list( "1")),
   rendererName = "Heatmap"
   )
-frameWidget(pt.membres.t)
+frameWidget(pt.membres.avg.t)
 
 if (crear.html.pt.membres.t == TRUE) {
-  saveWidget(pt.membres.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.t.html")), selfcontained=TRUE) 
+  saveWidget(pt.membres.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.avg.t.html")), selfcontained=TRUE) 
 }
-webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.t.html")),
-        file=file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.t.png")),
-#        delay=0.5, selector=".pvtUi") # to get both the heatmap table and buttons of variables in rows and columns surrounding it
+webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.avg.t.html")),
+        file=file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.uf2.avg.t.png")),
         delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
 
 if (mostrar.html.pt.membres.t == TRUE) {
-  pt.membres.t
+  pt.membres.avg.t
 }
 
   if (crear.informe.word == TRUE) {
     
     # Afegir contingut a l'informe en Word
     my_doc <- my_doc %>% 
-      body_add_break() %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_par(value = "D'on són les famílies més nombroses", style = "heading 2") %>% 
+      body_add_par(value = "Mida Mitjana de les Unitats Familiars", style = "heading 2") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.t.png")), width = 6, height = 3, style = "centered") %>% 
+      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.uf2.avg.t.png")), width = 6, height = 3, style = "centered") %>% 
+      body_add_par("Mitjana del número de membres de les famílies amb 2 o més membres allotjats", style = "Balloon Text") %>%
+      body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_par("La intensitat del color vermell és proporcional a la suma de casos de cada tipus", style = "Balloon Text")
     
   }
 
 ```
 
+### Taula Resum - Màximes
+
+```{r Taula Resum Mida Màxima Unitats Familiars (més d´un membre)}
+pt.membres.max.t <- rpivotTable(
+  data = my_data2, 
+  rows = c("Nacionalitat"), 
+  cols=c("Categoria"), 
+  vals = "Membres", 
+  aggregatorName = "Maximum", 
+  width="1200px", 
+  height="800px",   
+#  inclusions = list( Categoria = list("NO CONSTA")),
+  exclusions = list( Membres = list( "1")),
+  rendererName = "Heatmap"
+  )
+frameWidget(pt.membres.max.t)
+
+if (crear.html.pt.membres.t == TRUE) {
+  saveWidget(pt.membres.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.max.t.html")), selfcontained=TRUE) 
+}
+webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.max.t.html")),
+        file=file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.uf2.max.t.png")),
+        delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+
+if (mostrar.html.pt.membres.t == TRUE) {
+  pt.membres.max.t
+}
+
+  if (crear.informe.word == TRUE) {
+    
+    # Afegir contingut a l'informe en Word
+    my_doc <- my_doc %>% 
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      body_add_par(value = "Mida MAXIMA de les Unitats Familiars", style = "heading 2") %>% 
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.uf2.max.t.png")), width = 6, height = 3, style = "centered") %>% 
+      body_add_par("Valor màxim del número de membres de les famílies amb 2 o més membres allotjats", style = "Balloon Text") %>%
+      body_add_par("", style = "Normal") %>% # blank paragraph
+      body_add_par("La intensitat del color vermell és proporcional a la suma de casos de cada tipus", style = "Balloon Text")
+    
+  }
+
+```
 
 ## Regim Allotjament
 Pensió Completa
@@ -573,14 +617,14 @@ Allotjament només
 
 # ggplot2 chart
 # Get the data selected
-my_data7f <- my_data %>% 
+my_data7f <- my_data2 %>% 
   count(REGIM,
         wt = NULL,
         sort = FALSE) %>%
   filter(!is.na(REGIM)) 
 # Afegir fila a sota amb totals
 my_data7f.t <- rbind(my_data7f,
-      c("*** TOTALS ***", margin.table(as.matrix(my_data7f$n), 2))
+      c("TOTALS", margin.table(as.matrix(my_data7f$n), 2))
 )
 
 if (crear.informe.word == TRUE) {
@@ -656,7 +700,7 @@ if (crear.informe.word == TRUE) {
 ```{r Evolució mensual i Totals, echo=TRUE}
 
 
-my_data7d <- my_data %>% 
+my_data7d <- my_data2 %>% 
       count(REGIM,
             Categoria, 
             Mes,
@@ -704,7 +748,7 @@ if (mostrar.html.pt.regim.allotjament.t == TRUE) {
 
 # Opció 2) Segon intent de crear el heatmap table. Ara amb el paquet formattable
 # ...........................................
- my_data7d.t <- my_data %>% 
+ my_data7d.t <- my_data2 %>% 
        count(Mes,
              REGIM,
              wt = NULL, sort = FALSE) %>%
@@ -722,7 +766,7 @@ if (mostrar.html.pt.regim.allotjament.t == TRUE) {
  # margin.table(as.matrix(impute(my_data7d.t[,-1], 0)), 1)
  
  # Afegir fila i columna amb totals
- my_data7d.t2 <- cbind(rbind(my_data7d.t[,1], "*** TOTALS ***"), 
+ my_data7d.t2 <- cbind(rbind(my_data7d.t[,1], "TOTALS"), 
                        as_tibble(addmargins(as.matrix(impute(my_data7d.t[,-1], 0)))))
  # Fes nova heatmap-like table amb totals marginals, en objecte formattable
  my_data7d.ft <- formattable(my_data7d.t2, list(area(col = colnames(my_data7d.t2)[-1])
@@ -765,7 +809,6 @@ if (crear.html.dt.regim.allotjament.month == TRUE) {
       body_add_par(value = "Evolució mensual i Totals", style = "heading 2") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_table(my_data7d.t2, style = "table_template") %>%
-      #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.REGIM.t.png")), width = 6, height = 3, style = "centered") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.regim.allotjament.month.trimmed.png")), width = 6, height = 3, style = "centered") %>% 
       body_add_par("La intensitat del color vermell és proporcional a la suma de casos de cada tipus", style = "Balloon Text")
@@ -784,15 +827,15 @@ Evolució mensual i Totals
 # .......................................................
 #pt <- rpivotTable(my_data7d)
 pt.durada.t <- rpivotTable(
-  data = my_data, 
-  rows = c("Mes"), 
+  data = my_data2, 
+  rows = c("Mes","REGIM"), 
   cols=c("Categoria"), 
   vals = "DIES", 
   aggregatorName = "Sum", 
   width="1200px", 
   height="800px",   
 #  inclusions = list( Categoria = list("NO CONSTA")),
-#  exclusions = list( Mes = list( "2018-01")),
+  exclusions = list( REGIM = list( c("BUGADERIES", "COMIDA EXTRA"))),
   rendererName = "Heatmap"
   )
 frameWidget(pt.durada.t)
@@ -815,9 +858,11 @@ if (mostrar.html.pt.durada.t == TRUE) {
     my_doc <- my_doc %>% 
       body_add_break() %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_par(value = "Evolució mensual i Totals", style = "heading 2") %>% 
+      body_add_par(value = "Durada - Evolució mensual i Totals", style = "heading 2") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.DURADA.t.png")), width = 6, height = 3, style = "centered") %>% 
+      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.DURADA.t.png")), width = 3, height = 3, style = "centered") %>% 
+      body_add_par(" Pernoctacions de persones allotjades, en qualsevol regim d'alimentació") %>%
+      body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_par("La intensitat del color vermell és proporcional a la suma de casos de cada tipus", style = "Balloon Text")
     
   }
@@ -829,7 +874,7 @@ if (mostrar.html.pt.durada.t == TRUE) {
 ```{r Nacionalitats}
 
 # Get the data selected
-my_data7a <- my_data %>% 
+my_data7a <- my_data2 %>% 
   count(NacionalitatAngles,
         Categoria,
         Mes,
@@ -840,7 +885,7 @@ my_data7a <- my_data %>%
   filter(!is.na(NacionalitatAngles)
          )
 # Get the top10 also
-    my_data7a.top10 <-  my_data %>% 
+    my_data7a.top10 <-  my_data2 %>% 
           count(Nacionalitat, 
                 wt = NULL, sort = TRUE) %>%
           filter(!is.na(Nacionalitat)) %>%
@@ -849,7 +894,7 @@ my_data7a <- my_data %>%
 
 # Afegir fila a sota amb totals
 my_data7a.top10 <- rbind(my_data7a.top10,
-      c("*** TOTALS ***", margin.table(as.matrix(my_data7a$n), 2))
+      c("TOTALS", margin.table(as.matrix(my_data7a$n), 2))
 )
 
 if (crear.informe.word == TRUE) {
@@ -962,7 +1007,7 @@ if (mostrar.html.ggplotly.nacionalitat == TRUE) {
 ```{r Gràfic alternatiu (treemap)}
 
 # Get the data selected
-my_data7b <- my_data %>% 
+my_data7b <- my_data2 %>% 
   count(NacionalitatAngles, 
         wt = NULL, sort = FALSE) %>%
   filter(!is.na(NacionalitatAngles))
@@ -1016,7 +1061,7 @@ my_data7bCont <- my_data7b %>%
 ```{r Motiu Allotjament}
 
 # Get the data selected
-my_data9 <- my_data %>% 
+my_data9 <- my_data2 %>% 
   count(MotiuAllotjament,
         Categoria,
         wt = NULL,
@@ -1024,16 +1069,6 @@ my_data9 <- my_data %>%
   filter(!is.na(MotiuAllotjament)
          )
 
-if (crear.informe.word == TRUE) {
-  
-  # Afegir contingut a l'informe en Word
-  my_doc <- my_doc %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Motiu Alotjament", style = "heading 2") %>% 
-    body_add_par("", style = "Normal") # blank paragraph
-
-  
-}
 
 # ggplot with params suitable for displaying on screen and for  officer::body_add_gg
 # --------------------------------------------------------------
@@ -1047,7 +1082,7 @@ ggplot.motiu <- ggplot(data=my_data9, aes(x=MotiuAllotjament, fill=Categoria, y=
 #  scale_y_log10() +
 #  scale_y_continuous(breaks=c(0,1,10,100,1000,10000), trans="log1p") +
     #scale_fill_discrete(name="Continents") + # Legend Title
-  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust=0.5, size=8),
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust=0.5, size=7),
         axis.text.y = element_text(size=8),
         axis.title.x = element_text(size=8),
         axis.title.y = element_text(angle = 90, hjust = 0.5, vjust=0.5, size=10),
@@ -1074,8 +1109,6 @@ if (crear.informe.word == TRUE) {
   my_doc <- my_doc %>% 
     body_add_par(value = "Motius de l'Allotjament", style = "heading 2") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    #body_add_img(src=file.path(getwd(), imgpath, paste0(anydades,".barchart.nacionality.png")),width=6,height=3,style="centered") %>% # Afegit via png de disc
-    #  body_add_par("", style = "Normal") %>% # blank paragraph
     body_add_gg(value = ggplot.motiu, style = "centered")   # afegit via objecte ggplot directament (queda millor i no distorsionat!)
   
 }
@@ -1086,20 +1119,9 @@ if (crear.informe.word == TRUE) {
 ```{r Idem de Motius en taula}
  my_data9.t <- my_data9 %>% 
    tidyr::spread(Categoria, n)
-
- # # Make heatmap-like table  
- # formattable(my_data7d.t, list(area(col = colnames(my_data7d.t)[-1])
- #                             ~ color_tile("transparent", "pink")
- #                             )
- #             )
- 
- # add margin table. since any NA make the whole sum NA, we need to remove NA's first so that we get the right marginal sums
- # impute(.tbl, .na, ...) (from package tidyimpute)
- # margin.table(as.matrix(impute(my_data7d.t[,-1], 0)), 2)
- # margin.table(as.matrix(impute(my_data7d.t[,-1], 0)), 1)
  
  # Afegir fila i columna amb totals
- my_data9.t2 <- cbind(rbind(my_data9.t[,1], "*** TOTALS ***"), 
+ my_data9.t2 <- cbind(rbind(my_data9.t[,1], "TOTALS"), 
                        as_tibble(addmargins(as.matrix(impute(my_data9.t[,-1], 0)))))
  # Fes nova heatmap-like table amb totals marginals, en objecte formattable
  my_data9.ft <- formattable(my_data9.t2, list(area(col = colnames(my_data9.t2)[-1])
@@ -1154,7 +1176,7 @@ if (crear.html.dt.motiu == TRUE) {
 
   # Map Age group of users in pie charts over the world map
   # -------------------------------------------------------------
-  my_data6 <- count(my_data, NacionalitatAngles, AdultMenor, wt = NULL, sort = FALSE)
+  my_data6 <- count(my_data2, NacionalitatAngles, AdultMenor, wt = NULL, sort = FALSE)
   my_data6b <- tidyr::spread(my_data6, AdultMenor, n)
   if (length(my_data6b) > 3) {
     colnames(my_data6b)[4] <- "desconegut"
@@ -1214,6 +1236,7 @@ if (crear.html.dt.motiu == TRUE) {
       
       # Afegir contingut a l'informe en Word
       my_doc <- my_doc %>% 
+        body_add_break() %>% 
         body_add_par(value = "Distribució d'adults i menors per països", style = "heading 2") %>% 
         body_add_par("", style = "Normal") %>% # blank paragraph
         body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".leaflet.agegroups.png")), width = 6, height = 3, style = "centered") %>% 
@@ -1241,7 +1264,7 @@ if (crear.html.dt.motiu == TRUE) {
 
 # ggplot2 chart
 # Get the data selected
-my_data7e <- my_data %>% 
+my_data7e <- my_data2 %>% 
   count(AdultMenor,
         NacionalitatAngles,
         Categoria,
@@ -1331,7 +1354,7 @@ if (crear.informe.word == TRUE) {
  # margin.table(as.matrix(impute(my_data7d.t[,-1], 0)), 1)
  
  # Afegir fila i columna amb totals
- my_data7e.t2 <- cbind(rbind(my_data7e.t[,1], "*** TOTALS ***"), 
+ my_data7e.t2 <- cbind(rbind(my_data7e.t[,1], "TOTALS"), 
                        as_tibble(addmargins(as.matrix(impute(my_data7e.t[,-1], 0)))))
  # Fes nova heatmap-like table amb totals marginals, en objecte formattable
  my_data7e.ft <- formattable(my_data7e.t2, list(area(col = colnames(my_data7e.t2)[-1])
@@ -1388,7 +1411,7 @@ if (crear.html.dt.origens.menors == TRUE) {
 
 # ggplot2 chart
 # Get the data selected
-my_data10 <- my_data %>% 
+my_data10 <- my_data2 %>% 
   filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
   count(PrevisioSortida,
         Categoria,
@@ -1419,7 +1442,7 @@ if (crear.informe.word == TRUE) {
 ```{r Canvis a Situació Programa de Refugiats - Entrades}
 
 # Get the data selected
-my_data11 <- my_data %>% 
+my_data11 <- my_data2 %>% 
   filter(!is.na(DataIniciAllotjament)) %>%
   filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
   count(Mes,
@@ -1453,7 +1476,7 @@ if (crear.informe.word == TRUE) {
 
 
 # Get the data selected
-my_data12 <- my_data %>% 
+my_data12 <- my_data2 %>% 
   filter(!is.na(DataSortida)) %>%
   filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
   count(Mes,
@@ -1486,7 +1509,7 @@ if (crear.informe.word == TRUE) {
 ```{r Situació de Refugiats Fora de Programa Estatal}
 
 # Get the data selected
-my_data13 <- my_data %>% 
+my_data13 <- my_data2 %>% 
   filter(Categoria == "Refus-FP") %>%
   count(Mes,
         SituacioProgramaRefugiats,
@@ -1527,7 +1550,7 @@ Per mesos i categoria d'usuaris
 
 pt.despesa.t <- rpivotTable(
   data = my_data, 
-  rows = c("Mes", "Categoria"), 
+  rows = c("Categoria", "Mes"), 
   cols=c("REGIM"), 
   vals = "TOTAL", 
   aggregatorName = "Sum", 
