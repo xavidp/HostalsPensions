@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = FALSE)
 start_all <- Sys.time()
 ```
 
-## Allotjaments en Hostal i Pensions - AAI - Aj.BCN
+## Allotjament en Hostal i Pensions - AAI - Aj.BCN
 
 Resultats destacats a partir de les dades d'Allotjaments en Hostals i Pensions d'Immigrants i Refugiats de Barcelona, finançat a través de la Direcció d'Atenció i Acollida d'Immigrants de l'Ajuntament de Barcelona.
 
@@ -147,6 +147,18 @@ crear.png.ggplot.pais.tramit.ue <- runParam
 crear.png.ggplot.perfils <- runParam
 crear.png.ggplot.dec.majoria.edat <- runParam
 crear.png.ggplot.n.mes.saier <- runParam
+crear.png.worldmap.familysize <- runParam
+crear.png.worldmap.extra.familysize <- runParam
+crear.svg.worldmap.familysize <- runParam
+crear.svg.panzoom.worldmap.familysize <- runParam
+crear.png.pt.membres.t <- runParam
+crear.png.pt.regim.allotjament.t <- runParam
+crear.png.pt.durada.t <- runParam
+crear.png.treemap.nacionalitat <- runParam
+crear.png.dt.motiu <- runParam
+crear.png.leaflet.agegroups <- runParam
+crear.png.dt.origens.menors <- runParam
+crear.png.pt.despesa.t <- runParam
 
 runParam <- F
 
@@ -163,6 +175,8 @@ mostrar.png.ggplot.pais.tramit.ue <- runParam
 mostrar.ggplot.perfils <- runParam
 mostrar.ggplot.dec.majoria.edat <- runParam
 mostrar.html.pt.despesa.t <- runParam
+mostrar.ggplot.nacionalitat <- runParam
+mostrar.ggplot.motiu <- runParam
 
 runParam <- T
 
@@ -203,7 +217,7 @@ if (crear.informe.word == TRUE) {
   # styles_info(my_doc)
   
   my_doc <- my_doc %>% 
-    body_add_par(value = paste0("Allotjaments en Hostal i Pensions (", anydades, ")"), style = "Title") %>% 
+    body_add_par(value = paste0("Allotjament en Hostals i Pensions (", anydades, ")"), style = "Title") %>% 
     body_add_par(value = "Índex:", style = "Normal") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
     body_add_toc(level = 3) 
@@ -263,7 +277,7 @@ my_data5b <- my_data5 %>%
   #    summarise_all(sum) %>%
   ungroup()
 
-head(my_data5b)
+#head(my_data5b)
 
 
 ```
@@ -355,7 +369,7 @@ my_data5d <- tidyr::spread(my_data5d, Genere, n)
     #    summarise_all(sum) %>%
     ungroup()
   
-  head(my_data5e)
+  #head(my_data5e)
   
   # Get the basemap ready for the leaflet plot
   library(leaflet.minicharts)
@@ -408,7 +422,7 @@ my_data5d <- tidyr::spread(my_data5d, Genere, n)
   
 ```
 
-## Nuclis familiars
+## Unitats familiars
 
 ```{r Membres de les Unitats Familiars}
 # Plot Map Using rworldmap
@@ -421,8 +435,7 @@ my_data5d <- tidyr::spread(my_data5d, Genere, n)
 
   my_mapped_data$Membres <- as.numeric(my_mapped_data$Membres)
   
-#  png(filename=file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width=1200, height=600, units="px")
-#  png(filename=file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")))
+if (crear.svg.worldmap.familysize == TRUE) {
   # Plot as svg
   svglite(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.svg")), width = 12, height = 6)
 
@@ -436,7 +449,10 @@ my_data5d <- tidyr::spread(my_data5d, Genere, n)
                  missingCountryCol = "white")
   
   dev.off()
-
+}
+  
+if (crear.png.worldmap.familysize == TRUE) {
+  # Mostra-ho en pantalla també
   # Redo as png
   png(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.png")), width=1200, height=700, units="px")
   worldmap.familysize <- mapCountryData(my_mapped_data, 
@@ -447,7 +463,7 @@ my_data5d <- tidyr::spread(my_data5d, Genere, n)
                  oceanCol = "lightblue",
                  missingCountryCol = "white")
   dev.off()
-  
+}
   # Pending-2
   # =======================================================
   # Improve type of chart with the thematic maps package
@@ -457,7 +473,7 @@ my_data5d <- tidyr::spread(my_data5d, Genere, n)
   #
   #   if (!require("tmap")) install.packages("tmap")
 
-
+if (crear.svg.panzoom.worldmap.familysize == TRUE) {
   # =======================================================
   # Add svgPanZoom capabilities to standard Plots
   # See: https://github.com/timelyportfolio/svgPanZoom
@@ -473,7 +489,9 @@ my_data5d <- tidyr::spread(my_data5d, Genere, n)
                                                  missingCountryCol = "white")
     )
   )
+}
   
+if (crear.png.worldmap.extra.familysize == TRUE) {
   # render it into a bitmap array
   bitmap <- rsvg(file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize.svg")))
   dim(bitmap)
@@ -498,13 +516,14 @@ my_data5d <- tidyr::spread(my_data5d, Genere, n)
   # Re-scale image
   my_image_scaled <- image_scale(my_image_trimmed, "2000") # width to 2000px and height proportional to keep aspect ratio
   image_write(my_image_scaled, path = file.path(getwd(), imgpath, paste0(anydades, ".worldmap.familysize_2000px.png")))
-           
+}
+  
   if (crear.informe.word == TRUE) {
     
     # Afegir contingut a l'informe en Word
     my_doc <- my_doc %>% 
       body_add_break() %>% 
-      body_add_par(value = "Nuclis familiars", style = "heading 1") %>% 
+      body_add_par(value = "Unitats familiars", style = "heading 1") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_par(value = "Mida de les unitats familiars per països", style = "heading 2") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
@@ -521,26 +540,30 @@ my_data5d <- tidyr::spread(my_data5d, Genere, n)
 ### Taula Resum - Mitjanes
 
 ```{r Taula Resum Mida Mitjana Unitats Familiars (més d´un membre)}
-pt.membres.avg.t <- rpivotTable(
-  data = my_data2, 
-  rows = c("Nacionalitat"), 
-  cols=c("Categoria"), 
-  vals = "Membres", 
-  aggregatorName = "Average", 
-  width="1200px", 
-  height="800px",   
-#  inclusions = list( Categoria = list("NO CONSTA")),
-  exclusions = list( Membres = list( "1")),
-  rendererName = "Heatmap"
-  )
-frameWidget(pt.membres.avg.t)
-
 if (crear.html.pt.membres.t == TRUE) {
-  saveWidget(pt.membres.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.avg.t.html")), selfcontained=TRUE) 
+  pt.membres.avg.t <- rpivotTable(
+    data = my_data2, 
+    rows = c("Nacionalitat"), 
+    cols=c("Categoria"), 
+    vals = "Membres", 
+    aggregatorName = "Average", 
+    width="1200px", 
+    height="800px",   
+    #  inclusions = list( Categoria = list("NO CONSTA")),
+    exclusions = list( Membres = list( "1")),
+    rendererName = "Heatmap"
+  )
+  frameWidget(pt.membres.avg.t)
+  
+  
+  saveWidget(pt.membres.avg.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.avg.t.html")), selfcontained=TRUE) 
 }
-webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.avg.t.html")),
-        file=file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.uf2.avg.t.png")),
-        delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+
+if (crear.png.pt.membres.t == TRUE) {
+  webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.avg.t.html")),
+          file=file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.uf2.avg.t.png")),
+          delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+}
 
 if (mostrar.html.pt.membres.t == TRUE) {
   pt.membres.avg.t
@@ -565,26 +588,31 @@ if (mostrar.html.pt.membres.t == TRUE) {
 ### Taula Resum - Màximes
 
 ```{r Taula Resum Mida Màxima Unitats Familiars (més d´un membre)}
-pt.membres.max.t <- rpivotTable(
-  data = my_data2, 
-  rows = c("Nacionalitat"), 
-  cols=c("Categoria"), 
-  vals = "Membres", 
-  aggregatorName = "Maximum", 
-  width="1200px", 
-  height="800px",   
-#  inclusions = list( Categoria = list("NO CONSTA")),
-  exclusions = list( Membres = list( "1")),
-  rendererName = "Heatmap"
-  )
-frameWidget(pt.membres.max.t)
-
 if (crear.html.pt.membres.t == TRUE) {
-  saveWidget(pt.membres.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.max.t.html")), selfcontained=TRUE) 
+  
+  pt.membres.max.t <- rpivotTable(
+    data = my_data2, 
+    rows = c("Nacionalitat"), 
+    cols=c("Categoria"), 
+    vals = "Membres", 
+    aggregatorName = "Maximum", 
+    width="1200px", 
+    height="800px",   
+    #  inclusions = list( Categoria = list("NO CONSTA")),
+    exclusions = list( Membres = list( "1")),
+    rendererName = "Heatmap"
+  )
+  frameWidget(pt.membres.max.t)
+  
+  
+  saveWidget(pt.membres.max.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.max.t.html")), selfcontained=TRUE) 
 }
-webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.max.t.html")),
-        file=file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.uf2.max.t.png")),
-        delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+
+if (crear.png.pt.membres.t == TRUE) {
+  webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.membres.uf2.max.t.html")),
+          file=file.path(getwd(), imgpath, paste0(anydades, ".pt.membres.uf2.max.t.png")),
+          delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+}
 
 if (mostrar.html.pt.membres.t == TRUE) {
   pt.membres.max.t
@@ -607,9 +635,6 @@ if (mostrar.html.pt.membres.t == TRUE) {
 ```
 
 ## Regim Allotjament
-Pensió Completa
-Mitja pensió
-Allotjament només
 
 ### Resum
 
@@ -708,28 +733,30 @@ my_data7d <- my_data2 %>%
 
 # Option 1) Create the pivot table and save html on disk
 # .......................................................
-#pt <- rpivotTable(my_data7d)
-pt.regim.allotjament.t <- rpivotTable(
-  data = my_data7d, 
-  rows = c("Mes"), 
-  cols=c("REGIM"), 
-  vals = "n", 
-  aggregatorName = "Sum", 
-  width="1200px", 
-  height="800px",   
-#  inclusions = list( Categoria = list("NO CONSTA")),
-#  exclusions = list( Mes = list( "2018-01")),
-  rendererName = "Heatmap"
-  )
-frameWidget(pt.regim.allotjament.t)
-
 if (crear.html.pt.regim.allotjament.t == TRUE) {
+  pt.regim.allotjament.t <- rpivotTable(
+    data = my_data7d, 
+    rows = c("Mes"), 
+    cols=c("REGIM"), 
+    vals = "n", 
+    aggregatorName = "Sum", 
+    width="1200px", 
+    height="800px",   
+    #  inclusions = list( Categoria = list("NO CONSTA")),
+    #  exclusions = list( Mes = list( "2018-01")),
+    rendererName = "Heatmap"
+  )
+  frameWidget(pt.regim.allotjament.t)
+  
   saveWidget(pt.regim.allotjament.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.REGIM.t.html")), selfcontained=TRUE) 
 }
-webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.REGIM.t.html")),
-        file=file.path(getwd(), imgpath, paste0(anydades, ".pt.REGIM.t.png")),
-#        delay=0.5, selector=".pvtUi") # to get both the heatmap table and buttons of variables in rows and columns surrounding it
-        delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+
+if (crear.png.pt.regim.allotjament.t == TRUE) {
+  webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.REGIM.t.html")),
+          file=file.path(getwd(), imgpath, paste0(anydades, ".pt.REGIM.t.png")),
+          #        delay=0.5, selector=".pvtUi") # to get both the heatmap table and buttons of variables in rows and columns surrounding it
+          delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+}
 
 if (mostrar.html.pt.regim.allotjament.t == TRUE) {
   pt.regim.allotjament.t
@@ -788,6 +815,7 @@ if (crear.html.dt.regim.allotjament.month == TRUE) {
  my_data7d.dt <- frameWidget(my_data7d.dt)
 }
 
+if (crear.png.dt.regim.allotjament.month == TRUE) { 
  # Make screenshot out of that heatmap-like table, just in case, for easy adding into word document report
   webshot(file.path(getwd(), htmlpath, paste0(anydades, ".formatdatatable.regim.allotjament.month.html")),
         file=file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.regim.allotjament.month.png")),
@@ -799,7 +827,8 @@ if (crear.html.dt.regim.allotjament.month == TRUE) {
   my_image_trimmed <- image_trim(my_image)
   # Save trimmed image again to disk
   image_write(my_image_trimmed, path = file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.regim.allotjament.month.trimmed.png")))
-
+}
+ 
   if (crear.informe.word == TRUE) {
     
     # Afegir contingut a l'informe en Word
@@ -825,28 +854,29 @@ Evolució mensual i Totals
 
 # Option 1) Create the pivot table and save html on disk
 # .......................................................
-#pt <- rpivotTable(my_data7d)
-pt.durada.t <- rpivotTable(
-  data = my_data2, 
-  rows = c("Mes","REGIM"), 
-  cols=c("Categoria"), 
-  vals = "DIES", 
-  aggregatorName = "Sum", 
-  width="1200px", 
-  height="800px",   
-#  inclusions = list( Categoria = list("NO CONSTA")),
-  exclusions = list( REGIM = list( c("BUGADERIES", "COMIDA EXTRA"))),
-  rendererName = "Heatmap"
-  )
-frameWidget(pt.durada.t)
-
 if (crear.html.pt.durada.t == TRUE) {
+  pt.durada.t <- rpivotTable(
+    data = my_data2, 
+    rows = c("Mes","REGIM"), 
+    cols=c("Categoria"), 
+    vals = "DIES", 
+    aggregatorName = "Sum", 
+    width="1200px", 
+    height="800px",   
+    #  inclusions = list( Categoria = list("NO CONSTA")),
+    exclusions = list( REGIM = list( c("BUGADERIES", "COMIDA EXTRA"))),
+    rendererName = "Heatmap"
+  )
+  frameWidget(pt.durada.t)
   saveWidget(pt.durada.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.DURADA.t.html")), selfcontained=TRUE) 
 }
-webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.DURADA.t.html")),
-        file=file.path(getwd(), imgpath, paste0(anydades, ".pt.DURADA.t.png")),
-#        delay=0.5, selector=".pvtUi") # to get both the heatmap table and buttons of variables in rows and columns surrounding it
-        delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+
+if (crear.png.pt.durada.t == TRUE) {
+  webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.DURADA.t.html")),
+          file=file.path(getwd(), imgpath, paste0(anydades, ".pt.DURADA.t.png")),
+          #        delay=0.5, selector=".pvtUi") # to get both the heatmap table and buttons of variables in rows and columns surrounding it
+          delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+}
 
 if (mostrar.html.pt.durada.t == TRUE) {
   pt.durada.t
@@ -858,10 +888,10 @@ if (mostrar.html.pt.durada.t == TRUE) {
     my_doc <- my_doc %>% 
       body_add_break() %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_par(value = "Durada - Evolució mensual i Totals", style = "heading 2") %>% 
+      body_add_par(value = "Durades", style = "heading 2") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.DURADA.t.png")), width = 3, height = 3, style = "centered") %>% 
-      body_add_par(" Pernoctacions de persones allotjades, en qualsevol regim d'alimentació") %>%
+      body_add_par(" Pernoctacions de persones allotjades, en qualsevol regim d'allotjament") %>%
       body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_par("La intensitat del color vermell és proporcional a la suma de casos de cada tipus", style = "Balloon Text")
     
@@ -958,8 +988,10 @@ ggplot.nacionalitat <- ggplot(data=my_data7aCont, aes(x=NacionalitatAngles, fill
         legend.text = element_text(size=10)
         )
 
-# Mostra-ho en pantalla també
-ggplot.nacionalitat
+if (mostrar.ggplot.nacionalitat == TRUE) {
+  # Mostra-ho en pantalla també
+  ggplot.nacionalitat
+}
 
 if (crear.png.ggplot.nacionalitat == TRUE) {
   # Grava a disc per si un cas també
@@ -1024,6 +1056,7 @@ my_data7bCont <- my_data7b %>%
   ) %>%
   ungroup()
 
+if (crear.png.treemap.nacionalitat == TRUE) {
   # basic treemaps
     png(filename=file.path(getwd(), imgpath, paste0(anydades, ".treemap.nacionality.png")), width=1200, height=600, units="px")
     p2017.nacio=treemap(my_data7bCont,
@@ -1040,7 +1073,8 @@ my_data7bCont <- my_data7b %>%
                         align.labels=c("center", "center")
     )  
     dev.off()
-    
+}
+
     if (crear.informe.word == TRUE) {
       
       # Afegir contingut a l'informe en Word
@@ -1091,8 +1125,10 @@ ggplot.motiu <- ggplot(data=my_data9, aes(x=MotiuAllotjament, fill=Categoria, y=
         legend.text = element_text(size=10)
         )
 
+if (mostrar.ggplot.motiu == TRUE) {
 # Mostra-ho en pantalla també
 ggplot.motiu
+}
 
 if (crear.png.ggplot.motiu == TRUE) {
   # Grava a disc per si un cas també
@@ -1107,7 +1143,7 @@ if (crear.informe.word == TRUE) {
   
   # Afegir contingut a l'informe en Word
   my_doc <- my_doc %>% 
-    body_add_par(value = "Motius de l'Allotjament", style = "heading 2") %>% 
+    body_add_par(value = "Motius de l'allotjament (gràfic)", style = "heading 2") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
     body_add_gg(value = ggplot.motiu, style = "centered")   # afegit via objecte ggplot directament (queda millor i no distorsionat!)
   
@@ -1141,25 +1177,27 @@ if (crear.html.dt.motiu == TRUE) {
  htmlwidgets::saveWidget(my_data9.dt, file=file.path(getwd(), htmlpath, paste0(anydades, ".formatdatatable.motiu.html")), selfcontained=TRUE) 
 }
 
- # Make screenshot out of that heatmap-like table, just in case, for easy adding into word document report
-  webshot(file.path(getwd(), htmlpath, paste0(anydades, ".formatdatatable.motiu.html")),
-        file=file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.motiu.png")),
-        delay=0.5)
-  
-  # Read saved image
-  my_image <- image_read(file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.motiu.png")))
-  # Trim image
-  my_image_trimmed <- image_trim(my_image)
-  # Save trimmed image again to disk
-  image_write(my_image_trimmed, path = file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.motiu.trimmed.png")))
-
+ if (crear.png.dt.motiu == TRUE) {
+   # Make screenshot out of that heatmap-like table, just in case, for easy adding into word document report
+   webshot(file.path(getwd(), htmlpath, paste0(anydades, ".formatdatatable.motiu.html")),
+           file=file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.motiu.png")),
+           delay=0.5)
+   
+   # Read saved image
+   my_image <- image_read(file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.motiu.png")))
+   # Trim image
+   my_image_trimmed <- image_trim(my_image)
+   # Save trimmed image again to disk
+   image_write(my_image_trimmed, path = file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.motiu.trimmed.png")))
+ }
+ 
   if (crear.informe.word == TRUE) {
     
     # Afegir contingut a l'informe en Word
     my_doc <- my_doc %>% 
       body_add_break() %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_par(value = "Motius de l'Allotjament per categoria d'usuaris", style = "heading 2") %>% 
+      body_add_par(value = "Motius de l'allotjament (taula)", style = "heading 2") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_table(my_data9.t2, style = "table_template") %>%
       #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.REGIM.t.png")), width = 6, height = 3, style = "centered") %>% 
@@ -1202,14 +1240,7 @@ if (crear.html.dt.motiu == TRUE) {
     #    group_by(Nacionalitat_Angles) %>%
     #    summarise_all(sum) %>%
     ungroup()
-  
-  
 
-
-  
-  head(my_data6d)
-  
-  
   colors <- c("green", "lightgreen", "orange")
   
   leaflet.agegroups <- basemap %>%
@@ -1228,10 +1259,12 @@ if (crear.html.dt.motiu == TRUE) {
       saveWidget(leaflet.agegroups, file=file.path(getwd(), htmlpath, paste0(anydades, ".leaflet.agegroups.html")), selfcontained=TRUE) 
     }
 
+  if (crear.png.leaflet.agegroups == TRUE) {
     webshot(file.path(getwd(), htmlpath, paste0(anydades, ".leaflet.agegroups.html")),
-        file=file.path(getwd(), imgpath, paste0(anydades, ".leaflet.agegroups.png")),
-        delay=0.5, selector = "#htmlwidget_container")
-
+            file=file.path(getwd(), imgpath, paste0(anydades, ".leaflet.agegroups.png")),
+            delay=0.5, selector = "#htmlwidget_container")
+  }
+  
     if (crear.informe.word == TRUE) {
       
       # Afegir contingut a l'informe en Word
@@ -1326,7 +1359,7 @@ if (crear.informe.word == TRUE) {
   # Afegir contingut a l'informe en Word
   my_doc <- my_doc %>% 
     body_add_break() %>% 
-    body_add_par(value = "Orígens dels menors", style = "heading 2") %>% 
+    body_add_par(value = "Orígens dels menors (mapa)", style = "heading 2") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
     #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".barchart.nacio.menors.png")), width = 6, height = 3, style = "centered") %>% 
     body_add_gg(value = ggplot.nacio.menors, style = "centered") %>%  # afegit via objecte ggplot directament (queda millor i no distorsionat!)
@@ -1338,7 +1371,7 @@ if (crear.informe.word == TRUE) {
 ```
 
 
-```{r Idem dels Origens dels menors en taula}
+```{r Idem dels Orígens dels menors en taula}
  my_data7e.t <- my_data7e[,-1] %>% 
    tidyr::spread(Categoria, n)
 
@@ -1374,6 +1407,7 @@ if (crear.html.dt.origens.menors == TRUE) {
  htmlwidgets::saveWidget(my_data7e.dt, file=file.path(getwd(), htmlpath, paste0(anydades, ".formatdatatable.origens.menors.html")), selfcontained=TRUE) 
 }
 
+if (crear.png.dt.origens.menors == TRUE) {
  # Make screenshot out of that heatmap-like table, just in case, for easy adding into word document report
   webshot(file.path(getwd(), htmlpath, paste0(anydades, ".formatdatatable.origens.menors.html")),
         file=file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.origens.menors.png")),
@@ -1385,14 +1419,15 @@ if (crear.html.dt.origens.menors == TRUE) {
   my_image_trimmed <- image_trim(my_image)
   # Save trimmed image again to disk
   image_write(my_image_trimmed, path = file.path(getwd(), imgpath, paste0(anydades, ".formatdatatable.origens.menors.trimmed.png")))
-
+}
+  
   if (crear.informe.word == TRUE) {
     
     # Afegir contingut a l'informe en Word
     my_doc <- my_doc %>% 
       body_add_break() %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_par(value = "Origens dels Menors Allotjats per categoria d'usuaris", style = "heading 2") %>% 
+      body_add_par(value = "Orígens dels menors (taula)", style = "heading 2") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
       body_add_table(my_data7e.t2, style = "table_template") %>%
       #  body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.REGIM.t.png")), width = 6, height = 3, style = "centered") %>% 
@@ -1404,15 +1439,79 @@ if (crear.html.dt.origens.menors == TRUE) {
 ```
 
 
-## Refugiats
-### Previsió de Sortida - Resum
+## Entrades i Sortides
 
-```{r Refugiats - Previsió de Sortida - Resum}
+### Entrades
+
+```{r Entrades}
+
+# Get the data selected
+my_data11 <- my_data2 %>% 
+  filter(!is.na(DataIniciAllotjament)) %>%
+#  filter(grepl("2018", MesIniciAllotjament)) %>%
+  count(MesIniciAllotjament,
+        Categoria,
+        wt = NULL,
+        sort = FALSE)
+
+ my_data11.t <- my_data11 %>% 
+   tidyr::spread(Categoria, n)
+  
+
+if (crear.informe.word == TRUE) {
+  
+  # Afegir contingut a l'informe en Word
+  my_doc <- my_doc %>% 
+    body_add_break() %>% 
+    body_add_par(value = "Entrades i Sortides", style = "heading 1") %>% 
+    body_add_par("", style = "Normal") %>% # blank paragraph
+    body_add_par(value = "Entrades mensuals", style = "heading 2") %>% 
+    body_add_par("", style = "Normal") %>% # blank paragraph
+    body_add_table(my_data11.t, style = "table_template")
+  
+}
+
+
+
+
+```
+
+### Sortides
+
+```{r Sortides}
+
+
+# Get the data selected
+my_data12 <- my_data2 %>% 
+  filter(!is.na(DataSortida)) %>%
+  count(MesSortida,
+        Categoria,
+        wt = NULL,
+        sort = FALSE)
+
+ my_data12.t <- my_data12 %>% 
+   tidyr::spread(Categoria, n)
+  
+
+if (crear.informe.word == TRUE) {
+  
+  # Afegir contingut a l'informe en Word
+  my_doc <- my_doc %>% 
+    body_add_par("", style = "Normal") %>% # blank paragraph
+    body_add_par(value = "Sortides Mensuals", style = "heading 2") %>% 
+    body_add_par("", style = "Normal") %>% # blank paragraph
+    body_add_table(my_data12.t, style = "table_template")
+  
+}
+```
+
+### Previsió de Sortida
+
+```{r Previsió de Sortida}
 
 # ggplot2 chart
 # Get the data selected
 my_data10 <- my_data2 %>% 
-  filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
   count(PrevisioSortida,
         Categoria,
         wt = NULL,
@@ -1427,84 +1526,16 @@ if (crear.informe.word == TRUE) {
   # Afegir contingut a l'informe en Word
   my_doc <- my_doc %>% 
     body_add_break() %>% 
-    body_add_par(value = "Refugiats", style = "heading 1") %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Previsió de Sortida - Resum", style = "heading 2") %>% 
+    body_add_par(value = "Previsió de Sortida", style = "heading 2") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
     body_add_table(my_data10.t, style = "table_template")
   
 }
 
-```
-
-### Canvis a Situació Programa de Refugiats - Entrades
-
-```{r Canvis a Situació Programa de Refugiats - Entrades}
-
-# Get the data selected
-my_data11 <- my_data2 %>% 
-  filter(!is.na(DataIniciAllotjament)) %>%
-  filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
-  count(Mes,
-        Categoria,
-        wt = NULL,
-        sort = FALSE)
-
- my_data11.t <- my_data11 %>% 
-   tidyr::spread(Categoria, n)
-  
-
-if (crear.informe.word == TRUE) {
-  
-  # Afegir contingut a l'informe en Word
-  my_doc <- my_doc %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Canvis a Situació Programa de Refugiats - Entrades", style = "heading 2") %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_table(my_data11.t, style = "table_template")
-  
-}
-
-
-
 
 ```
 
-### Canvis a Situació Programa de Refugiats - Sortides
-
-```{r Canvis a Situació Programa de Refugiats - Sortides}
-
-
-# Get the data selected
-my_data12 <- my_data2 %>% 
-  filter(!is.na(DataSortida)) %>%
-  filter(Categoria == "Refus-P" | Categoria == "Refus-FP") %>%
-  count(Mes,
-        Categoria,
-        wt = NULL,
-        sort = FALSE)
-
- my_data12.t <- my_data12 %>% 
-   tidyr::spread(Categoria, n)
-  
-
-if (crear.informe.word == TRUE) {
-  
-  # Afegir contingut a l'informe en Word
-  my_doc <- my_doc %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Canvis a Situació Programa de Refugiats - Sortides", style = "heading 2") %>% 
-    body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_table(my_data12.t, style = "table_template")
-  
-}
-
-
-
-
-```
-
-### Situació de Refugiats Fora de Programa Estatal
+## Situació de Refugiats Fora de Programa Estatal
 
 ```{r Situació de Refugiats Fora de Programa Estatal}
 
@@ -1531,7 +1562,7 @@ if (crear.informe.word == TRUE) {
   # Afegir contingut a l'informe en Word
   my_doc <- my_doc %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
-    body_add_par(value = "Situació de Refugiats Fora de Programa Estatal", style = "heading 2") %>% 
+    body_add_par(value = "Situació de Refugiats Fora de Programa Estatal", style = "heading 1") %>% 
     body_add_par("", style = "Normal") %>% # blank paragraph
     body_add_table(my_data13.t, style = "table_template")
   
@@ -1547,28 +1578,30 @@ if (crear.informe.word == TRUE) {
 Per mesos i categoria d'usuaris
 
 ```{r Despesa Per mesos i categories dels usuaris}
-
-pt.despesa.t <- rpivotTable(
-  data = my_data, 
-  rows = c("Categoria", "Mes"), 
-  cols=c("REGIM"), 
-  vals = "TOTAL", 
-  aggregatorName = "Sum", 
-  width="1200px", 
-  height="800px",   
-#  inclusions = list( Categoria = list("NO CONSTA")),
-#  exclusions = list( Mes = list( "2018-01")),
-  rendererName = "Heatmap"
-  )
-frameWidget(pt.despesa.t)
-
 if (crear.html.pt.despesa.t == TRUE) {
+  pt.despesa.t <- rpivotTable(
+    data = my_data, 
+    rows = c("Categoria", "Mes"), 
+    cols=c("REGIM"), 
+    vals = "TOTAL", 
+    aggregatorName = "Sum", 
+    width="1200px", 
+    height="1000px",   
+    #  inclusions = list( Categoria = list("NO CONSTA")),
+    #  exclusions = list( Mes = list( "2018-01")),
+    rendererName = "Heatmap"
+  )
+  frameWidget(pt.despesa.t)
+  
   saveWidget(pt.despesa.t, file=file.path(getwd(), htmlpath, paste0(anydades, ".pt.despesa.t.html")), selfcontained=TRUE) 
 }
+
+if (crear.png.pt.despesa.t == TRUE) {
 webshot(file.path(getwd(), htmlpath, paste0(anydades, ".pt.despesa.t.html")),
         file=file.path(getwd(), imgpath, paste0(anydades, ".pt.despesa.t.png")),
 #        delay=0.5, selector=".pvtUi") # to get both the heatmap table and buttons of variables in rows and columns surrounding it
         delay=0.5, selector=".pvtRendererArea") # to get only the heatmap table with results
+}
 
 if (mostrar.html.pt.despesa.t == TRUE) {
   pt.despesa.t
@@ -1580,9 +1613,9 @@ if (mostrar.html.pt.despesa.t == TRUE) {
     my_doc <- my_doc %>% 
       body_add_break() %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_par(value = "Evolució de la despesa per categoria d'usuaris", style = "heading 2") %>% 
+      body_add_par(value = "Evolució de la despesa per categoria d'usuaris", style = "heading 1") %>% 
       body_add_par("", style = "Normal") %>% # blank paragraph
-      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.despesa.t.png")), width = 6, height = 3, style = "centered") %>% 
+      body_add_img(src = file.path(getwd(), imgpath, paste0(anydades, ".pt.despesa.t.png")), width = 6, height = 5, style = "centered") %>% 
       body_add_par("La intensitat del color vermell és proporcional a la suma de casos de cada tipus", style = "Balloon Text")
     
   }
